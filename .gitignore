@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.output/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+data/
+backups/
+.env
+.env.local
+.vinxi/
+.nitro/
+.cache/
+*.tsbuildinfo

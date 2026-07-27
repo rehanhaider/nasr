@@ -1,0 +1,43 @@
+{
+  "name": "@mizan/web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev --port 8080 --host 0.0.0.0",
+    "build": "vite build",
+    "start": "PORT=8080 HOST=0.0.0.0 node .output/server/index.mjs",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:generate": "drizzle-kit generate",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@mizan/shared": "workspace:*",
+    "@tanstack/react-form": "1.11.0",
+    "@tanstack/react-query": "5.101.2",
+    "@tanstack/react-router": "1.170.18",
+    "@tanstack/react-start": "1.168.28",
+    "@tanstack/react-table": "8.21.3",
+    "better-sqlite3": "13.0.1",
+    "drizzle-orm": "0.44.1",
+    "nitro": "3.0.260610-beta",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "vite": "7.0.5",
+    "zod": "3.24.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.1.8",
+    "@types/better-sqlite3": "7.6.13",
+    "@types/react": "19.1.4",
+    "@types/react-dom": "19.1.5",
+    "@vitejs/plugin-react": "4.5.2",
+    "autoprefixer": "10.4.21",
+    "drizzle-kit": "0.30.4",
+    "postcss": "8.5.3",
+    "tailwindcss": "4.1.8",
+    "tsx": "4.19.4",
+    "typescript": "5.7.3",
+    "vitest": "3.1.4"
+  }
+}

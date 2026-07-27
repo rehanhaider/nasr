@@ -1,0 +1,17 @@
+[Unit]
+Description=Mizan SQLite Backup
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/mizan
+ExecStart=/bin/bash -c '\
+  BACKUP_DIR=/opt/mizan/backups; \
+  mkdir -p "$BACKUP_DIR"; \
+  DB=/opt/mizan/data/mizan.db; \
+  if [ -f "$DB" ]; then \
+    cp "$DB" "$BACKUP_DIR/mizan-$(date +%%Y%%m%%d-%%H%%M%%S).db"; \
+    find "$BACKUP_DIR" -name "mizan-*.db" -mtime +14 -delete; \
+    echo "Backup complete. Retained 14 days."; \
+  else \
+    echo "No database found at $DB"; \
+  fi'
