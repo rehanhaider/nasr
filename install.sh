@@ -69,8 +69,10 @@ pnpm install --frozen-lockfile --config.confirmModulesPurge=false
 # also has no install/postinstall script, which is why `pnpm rebuild` is a no-op
 # here. Test whether the binding actually loads; if not, force a source build and
 # put the result where binding.js will look first.
+# The probe must construct a Database: require() alone never dlopens the binary,
+# binding.js is only reached from the Database constructor.
 echo "Checking better-sqlite3 native binding..."
-if (cd "$INSTALL_DIR/apps/web" && node -e "require('better-sqlite3')") 2>/dev/null; then
+if (cd "$INSTALL_DIR/apps/web" && node -e "new (require('better-sqlite3'))(':memory:').close()") 2>/dev/null; then
   echo "Prebuilt binary works."
 else
   echo "Prebuilt binary is unusable on this system. Building from source (this takes several minutes)..."
