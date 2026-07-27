@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { opportunityUpdateSchema } from '@mizan/shared'
+import { opportunityUpdateSchema } from '@nasr/shared'
 import { requireAuth, json } from '../server/auth.js'
 import {
   getOpportunity,
@@ -10,7 +10,7 @@ import {
   getWrittenOutboundCount,
 } from '../server/services/pipeline.js'
 import { getSettings } from '../server/services/settings.js'
-import { checkGhostedEligibility, stalenessLevel, isMissingNextAction, getToday } from '@mizan/shared'
+import { checkGhostedEligibility, stalenessLevel, isMissingNextAction, getToday } from '@nasr/shared'
 
 export const Route = createFileRoute('/api/v1/pipeline/opportunity/$id')({
   server: {

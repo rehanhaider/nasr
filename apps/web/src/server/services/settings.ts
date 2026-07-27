@@ -1,7 +1,7 @@
 import { db } from '../../db/index.js'
 import { settings } from '../../db/schema.js'
 import { eq } from 'drizzle-orm'
-import type { Settings, SettingsUpdate } from '@mizan/shared'
+import type { Settings, SettingsUpdate } from '@nasr/shared'
 
 const SETTING_KEYS = [
   'timezone',

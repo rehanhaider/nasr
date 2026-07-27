@@ -5,6 +5,6 @@ export default defineConfig({
   out: './migrations',
   dialect: 'sqlite',
   dbCredentials: {
-    url: process.env.MIZAN_DB_PATH || './data/mizan.db',
+    url: process.env.NASR_DB_PATH || './data/nasr.db',
   },
 })

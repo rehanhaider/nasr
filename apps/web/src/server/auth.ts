@@ -5,7 +5,7 @@ import { eq, and } from 'drizzle-orm'
 
 const LOCKOUT_MINUTES = 10
 const MAX_ATTEMPTS = 5
-const SESSION_COOKIE = 'mizan_session'
+const SESSION_COOKIE = 'nasr_session'
 
 export function json(data: unknown, status = 200, headers: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(data), {

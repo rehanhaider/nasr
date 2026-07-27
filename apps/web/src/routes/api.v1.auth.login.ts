@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { loginRequestSchema } from '@mizan/shared'
+import { loginRequestSchema } from '@nasr/shared'
 import { login, isPinSet, setPin, json, makeSessionCookie } from '../server/auth.js'
 
 export const Route = createFileRoute('/api/v1/auth/login')({

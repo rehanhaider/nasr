@@ -4,7 +4,7 @@ import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { existsSync, mkdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 
-const dbPath = process.env.MIZAN_DB_PATH || './data/mizan.db'
+const dbPath = process.env.NASR_DB_PATH || './data/nasr.db'
 
 const dir = dirname(dbPath)
 if (!existsSync(dir)) {

@@ -16,7 +16,7 @@ export const Route = createFileRoute('/api/v1/export')({
 
         if (format === 'csv') {
           const csv = module === 'pipeline' ? exportPipelineCsv() : exportDeenCsv()
-          const filename = `mizan-${module ?? 'deen'}-${now}.csv`
+          const filename = `nasr-${module ?? 'deen'}-${now}.csv`
           return new Response(csv, {
             headers: {
               'Content-Type': 'text/csv',
@@ -26,7 +26,7 @@ export const Route = createFileRoute('/api/v1/export')({
         }
 
         const data = exportAllJson()
-        const filename = `mizan-export-${now}.json`
+        const filename = `nasr-export-${now}.json`
         return new Response(JSON.stringify(data, null, 2), {
           headers: {
             'Content-Type': 'application/json',

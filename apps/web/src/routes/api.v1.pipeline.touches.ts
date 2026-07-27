@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { touchCreateSchema } from '@mizan/shared'
+import { touchCreateSchema } from '@nasr/shared'
 import { requireAuth, json } from '../server/auth.js'
 import { getTouchesForOpportunity, createTouch } from '../server/services/pipeline.js'
 

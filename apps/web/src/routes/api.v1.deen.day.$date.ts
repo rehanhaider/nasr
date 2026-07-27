@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { deenDayUpdateSchema } from '@mizan/shared'
+import { deenDayUpdateSchema } from '@nasr/shared'
 import { requireAuth, json } from '../server/auth.js'
 import { getDay, upsertDay } from '../server/services/deen.js'
 

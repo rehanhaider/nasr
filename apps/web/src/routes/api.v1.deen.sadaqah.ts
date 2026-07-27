@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { sadaqahCreateSchema } from '@mizan/shared'
+import { sadaqahCreateSchema } from '@nasr/shared'
 import { requireAuth, json } from '../server/auth.js'
 import { getSadaqahEntries, createSadaqah } from '../server/services/deen.js'
 

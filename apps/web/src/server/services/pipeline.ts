@@ -2,14 +2,14 @@ import { db } from '../../db/index.js'
 import { opportunities, touches } from '../../db/schema.js'
 import { eq, desc } from 'drizzle-orm'
 import { randomBytes } from 'node:crypto'
-import { checkGhostedEligibility, getToday } from '@mizan/shared'
+import { checkGhostedEligibility, getToday } from '@nasr/shared'
 import type {
   OpportunityCreate,
   OpportunityUpdate,
   TouchCreate,
   Opportunity,
   Touch,
-} from '@mizan/shared'
+} from '@nasr/shared'
 import { getSettings } from './settings.js'
 
 export interface OpportunityWithMeta extends Opportunity {

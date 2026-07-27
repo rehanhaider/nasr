@@ -4,7 +4,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { resolve } from 'node:path'
 import { randomBytes, scryptSync, createHash } from 'node:crypto'
-import { checkGhostedEligibility } from '@mizan/shared'
+import { checkGhostedEligibility } from '@nasr/shared'
 
 describe('Auth: PIN and session logic', () => {
   it('hashes PIN with scrypt and verifies correctly', () => {
@@ -57,12 +57,12 @@ describe('Auth: cookie and bearer token extraction', () => {
 
   it('extracts token from cookie header', () => {
     const token = 'abc123'
-    const cookie = `mizan_session=${token}; Path=/; HttpOnly`
-    expect(extractTokenFromCookie(cookie, 'mizan_session')).toBe(token)
+    const cookie = `nasr_session=${token}; Path=/; HttpOnly`
+    expect(extractTokenFromCookie(cookie, 'nasr_session')).toBe(token)
   })
 
   it('returns null when cookie is missing', () => {
-    expect(extractTokenFromCookie('other=value', 'mizan_session')).toBeNull()
+    expect(extractTokenFromCookie('other=value', 'nasr_session')).toBeNull()
   })
 
   it('extracts bearer token', () => {

@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { settingsUpdateSchema } from '@mizan/shared'
+import { settingsUpdateSchema } from '@nasr/shared'
 import { requireAuth, json } from '../server/auth.js'
 import { getSettings, updateSettings } from '../server/services/settings.js'
 

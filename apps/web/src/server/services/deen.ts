@@ -2,7 +2,7 @@ import { db } from '../../db/index.js'
 import { deenDays, sadaqahLog, observations } from '../../db/schema.js'
 import { eq, and, gte, lte, desc } from 'drizzle-orm'
 import { randomBytes } from 'node:crypto'
-import type { DeenDay, DeenDayUpdate, SadaqahCreate, ObservationCreate } from '@mizan/shared'
+import type { DeenDay, DeenDayUpdate, SadaqahCreate, ObservationCreate } from '@nasr/shared'
 
 export function getDaysByRange(startDate: string, endDate: string): DeenDay[] {
   return db

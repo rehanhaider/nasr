@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { observationCreateSchema } from '@mizan/shared'
+import { observationCreateSchema } from '@nasr/shared'
 import { requireAuth, json } from '../server/auth.js'
 import { getObservations, createObservation, deleteObservation } from '../server/services/deen.js'
 

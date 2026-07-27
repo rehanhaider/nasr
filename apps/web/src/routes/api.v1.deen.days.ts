@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { requireAuth, json } from '../server/auth.js'
 import { getDaysByRange } from '../server/services/deen.js'
 import { getSettings } from '../server/services/settings.js'
-import { getToday, getCycleDay, cycleDatesForDay, datesInRange } from '@mizan/shared'
+import { getToday, getCycleDay, cycleDatesForDay, datesInRange } from '@nasr/shared'
 
 export const Route = createFileRoute('/api/v1/deen/days')({
   server: {

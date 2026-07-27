@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { opportunityCreateSchema } from '@mizan/shared'
+import { opportunityCreateSchema } from '@nasr/shared'
 import { requireAuth, json } from '../server/auth.js'
 import { getOpportunities, createOpportunity } from '../server/services/pipeline.js'
 
