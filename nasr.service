@@ -10,6 +10,9 @@ Environment=PORT=8080
 Environment=HOST=0.0.0.0
 Environment=NODE_ENV=production
 Environment=NASR_DB_PATH=/opt/nasr/data/nasr.db
+# Written by install.sh; overrides the defaults above. Leading "-" so a missing
+# file is not a startup failure.
+EnvironmentFile=-/opt/nasr/.env
 ExecStart=/usr/bin/node /opt/nasr/apps/web/.output/server/index.mjs
 Restart=always
 RestartSec=5
