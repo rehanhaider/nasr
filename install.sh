@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-trap 'echo "" >&2; echo "install.sh: FAILED at line $LINENO (exit $?)" >&2' ERR
+trap 'rc=$?; echo "" >&2; echo "install.sh: FAILED at line $LINENO (exit $rc)" >&2' ERR
 
 INSTALL_DIR="/opt/nasr"
 SERVICE_USER="${NASR_USER:-$(whoami)}"
@@ -62,15 +62,32 @@ echo "Installing dependencies..."
 # different pnpm version otherwise aborts when there is no TTY.
 pnpm install --frozen-lockfile --config.confirmModulesPurge=false
 
-# Rebuild better-sqlite3 from source if glibc is too old for its prebuilt binary.
-# NB: no `| head -1` here — head exits early, ldd dies on SIGPIPE, and under
-# `set -o pipefail` that kills the whole script with no message.
-GLIBC_VER=$(ldd --version 2>&1 | awk 'NR==1 {print $NF}')
-if [[ "$GLIBC_VER" =~ ^[0-9]+\.[0-9]+$ ]] && [ "$(awk "BEGIN{print ($GLIBC_VER < 2.38)}")" = "1" ]; then
-  echo "Rebuilding better-sqlite3 for glibc $GLIBC_VER..."
-  command -v gcc &>/dev/null || sudo apt-get install -y build-essential python3
-  # -r: better-sqlite3 is a dependency of apps/web, not of the workspace root
-  pnpm -r rebuild better-sqlite3
+# better-sqlite3 ships prebuilt binaries for every platform inside its tarball
+# and lib/binding.js prefers prebuilds/<platform>-<arch>.node over anything
+# node-gyp produces. The linux-arm64 prebuild is linked against glibc 2.38,
+# newer than Raspberry Pi OS bookworm's 2.36, so it fails to dlopen. The package
+# also has no install/postinstall script, which is why `pnpm rebuild` is a no-op
+# here. Test whether the binding actually loads; if not, force a source build and
+# put the result where binding.js will look first.
+echo "Checking better-sqlite3 native binding..."
+if (cd "$INSTALL_DIR/apps/web" && node -e "require('better-sqlite3')") 2>/dev/null; then
+  echo "Prebuilt binary works."
+else
+  echo "Prebuilt binary is unusable on this system. Building from source (this takes several minutes)..."
+  command -v gcc &>/dev/null && command -v make &>/dev/null || sudo apt-get install -y build-essential
+  command -v python3 &>/dev/null || sudo apt-get install -y python3
+  BS3_DIR=$(cd "$INSTALL_DIR/apps/web" && node -e "const p=require('path'); console.log(p.dirname(p.dirname(require.resolve('better-sqlite3'))))")
+  (
+    cd "$BS3_DIR"
+    # --force_build=1: binding.gyp otherwise detects the bundled prebuild and skips compiling
+    npx --yes node-gyp rebuild --release --force_build=1
+    PREBUILD="prebuilds/$(node -p "process.platform + '-' + process.arch").node"
+    # rm before cp: pnpm hardlinks package files into the global store, so
+    # writing in place would corrupt the store copy for every other project.
+    rm -f "$PREBUILD"
+    cp build/Release/better_sqlite3.node "$PREBUILD"
+  )
+  (cd "$INSTALL_DIR/apps/web" && node -e "new (require('better-sqlite3'))(':memory:').close(); console.log('Source-built better-sqlite3 loads OK.')")
 fi
 
 # 5. Run migrations
