@@ -1,8 +1,10 @@
 packages:
   - "packages/*"
   - "apps/*"
-onlyBuiltDependencies:
-  - better-sqlite3
-  - '@parcel/watcher'
-  - '@tailwindcss/oxide'
-  - esbuild
+
+# pnpm v11 renamed onlyBuiltDependencies -> allowBuilds
+allowBuilds:
+  better-sqlite3: true
+  '@parcel/watcher': true
+  '@tailwindcss/oxide': true
+  esbuild: true

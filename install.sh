@@ -3,6 +3,9 @@ set -euo pipefail
 
 INSTALL_DIR="/opt/nasr"
 SERVICE_USER="${NASR_USER:-$(whoami)}"
+# Must match NASR_DB_PATH in nasr.service, otherwise migrations and the PIN
+# bootstrap below write to a different file than the running app reads.
+export NASR_DB_PATH="$INSTALL_DIR/data/nasr.db"
 
 echo "=== Nasr Installer ==="
 
@@ -31,7 +34,9 @@ cd "$INSTALL_DIR"
 
 # 4. Install dependencies
 echo "Installing dependencies..."
-pnpm install --frozen-lockfile 2>/dev/null || pnpm install
+# confirmModulesPurge=false: a re-run over an existing node_modules built by a
+# different pnpm version otherwise aborts when there is no TTY.
+pnpm install --frozen-lockfile --config.confirmModulesPurge=false
 
 # Rebuild better-sqlite3 from source if glibc is too old for its prebuilt binary
 GLIBC_VER=$(ldd --version 2>&1 | head -1 | awk '{print $NF}')
@@ -60,17 +65,22 @@ else
   echo "Using PIN from NASR_PIN environment variable."
 fi
 
-# Set PIN via API bootstrap
-node -e "
+# Set PIN directly in the DB. Run from apps/web: better-sqlite3 is a dependency
+# of that workspace package, so it does not resolve from the repo root.
+# The PIN is passed via env, never interpolated into the JS source.
+(
+cd "$INSTALL_DIR/apps/web"
+NASR_PIN_VALUE="$pin" node --input-type=commonjs -e "
   const Database = require('better-sqlite3');
   const crypto = require('crypto');
-  const db = new Database('$INSTALL_DIR/data/nasr.db');
+  const db = new Database(process.env.NASR_DB_PATH);
   const salt = crypto.randomBytes(16).toString('hex');
-  const hash = crypto.scryptSync('$pin', salt, 64).toString('hex');
+  const hash = crypto.scryptSync(process.env.NASR_PIN_VALUE, salt, 64).toString('hex');
   db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('pin_hash', salt + ':' + hash);
   db.close();
   console.log('PIN set successfully.');
 "
+)
 
 # 7. Build
 echo "Building..."
