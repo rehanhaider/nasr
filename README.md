@@ -251,7 +251,7 @@ The architecture is designed for this:
 
 4. **Base URL:** The fetch wrapper in `data/api.ts` uses relative URLs. For mobile, configure a base URL like `http://<pi-ip>:8080/api/v1`.
 
-5. **CORS:** Set `MIZAN_CORS_ORIGINS=http://<dev-machine>:8081` in the Pi's environment to allow the Expo dev client.
+5. **CORS:** Not implemented yet — no CORS handling exists in the server. It will need to read `NASR_CORS_ORIGINS=http://<dev-machine>:8081` from the Pi's environment before the Expo dev client can talk to it.
 
 ## Stack
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+trap 'echo "" >&2; echo "install.sh: FAILED at line $LINENO (exit $?)" >&2' ERR
 
 INSTALL_DIR="/opt/nasr"
 SERVICE_USER="${NASR_USER:-$(whoami)}"
@@ -38,12 +39,15 @@ echo "Installing dependencies..."
 # different pnpm version otherwise aborts when there is no TTY.
 pnpm install --frozen-lockfile --config.confirmModulesPurge=false
 
-# Rebuild better-sqlite3 from source if glibc is too old for its prebuilt binary
-GLIBC_VER=$(ldd --version 2>&1 | head -1 | awk '{print $NF}')
-if [ -n "$GLIBC_VER" ] && [ "$(awk "BEGIN{print $GLIBC_VER < 2.38}")" = "1" ]; then
+# Rebuild better-sqlite3 from source if glibc is too old for its prebuilt binary.
+# NB: no `| head -1` here — head exits early, ldd dies on SIGPIPE, and under
+# `set -o pipefail` that kills the whole script with no message.
+GLIBC_VER=$(ldd --version 2>&1 | awk 'NR==1 {print $NF}')
+if [[ "$GLIBC_VER" =~ ^[0-9]+\.[0-9]+$ ]] && [ "$(awk "BEGIN{print ($GLIBC_VER < 2.38)}")" = "1" ]; then
   echo "Rebuilding better-sqlite3 for glibc $GLIBC_VER..."
   command -v gcc &>/dev/null || sudo apt-get install -y build-essential python3
-  pnpm rebuild better-sqlite3
+  # -r: better-sqlite3 is a dependency of apps/web, not of the workspace root
+  pnpm -r rebuild better-sqlite3
 fi
 
 # 5. Run migrations
