@@ -33,6 +33,14 @@ cd "$INSTALL_DIR"
 echo "Installing dependencies..."
 pnpm install --frozen-lockfile 2>/dev/null || pnpm install
 
+# Rebuild better-sqlite3 from source if glibc is too old for its prebuilt binary
+GLIBC_VER=$(ldd --version 2>&1 | head -1 | awk '{print $NF}')
+if [ -n "$GLIBC_VER" ] && [ "$(awk "BEGIN{print $GLIBC_VER < 2.38}")" = "1" ]; then
+  echo "Rebuilding better-sqlite3 for glibc $GLIBC_VER..."
+  command -v gcc &>/dev/null || sudo apt-get install -y build-essential python3
+  pnpm rebuild better-sqlite3
+fi
+
 # 5. Run migrations
 echo "Running database migrations..."
 mkdir -p data
