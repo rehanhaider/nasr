@@ -1,7 +1,10 @@
 import { z } from 'zod'
 
 export const loginRequestSchema = z.object({
-  pin: z.string().min(4).max(20),
+  pin: z
+    .string()
+    .min(4, 'PIN must be at least 4 digits')
+    .max(20, 'PIN must be at most 20 digits'),
 })
 
 export const loginResponseSchema = z.object({

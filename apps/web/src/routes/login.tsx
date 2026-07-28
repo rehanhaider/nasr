@@ -5,6 +5,7 @@ import { useAuthStatus } from '../data/queries.js'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiPost } from '../data/api.js'
 import { queryKeys } from '../data/query-keys.js'
+import { fieldErrorText } from '../lib/form.js'
 import { useState } from 'react'
 
 export const Route = createFileRoute('/login')({
@@ -85,7 +86,7 @@ function LoginPage() {
                     onBlur={field.handleBlur}
                   />
                   {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
-                    <p className="mt-2 text-xs text-red-400">{field.state.meta.errors.join(', ')}</p>
+                    <p className="mt-2 text-xs text-red-400">{fieldErrorText(field.state.meta.errors)}</p>
                   )}
                 </div>
               )}

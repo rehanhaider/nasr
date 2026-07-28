@@ -3,6 +3,7 @@ import { useForm } from '@tanstack/react-form'
 import { opportunityCreateSchema, getToday } from '@nasr/shared'
 import { useCreateOpportunity } from '../data/mutations.js'
 import { useSettings } from '../data/queries.js'
+import { fieldErrorText, schemaValidator } from '../lib/form.js'
 
 export const Route = createFileRoute('/pipeline/new')({
   component: NewOpportunityPage,
@@ -30,7 +31,7 @@ function NewOpportunityPage() {
       next_action_date: '',
       notes: '',
     },
-    validators: { onChange: opportunityCreateSchema },
+    validators: { onChange: schemaValidator(opportunityCreateSchema) },
     onSubmit: async ({ value }) => {
       const data = {
         ...value,
@@ -149,7 +150,7 @@ function FormField({ form, name, label, type = 'text', required }: { form: any; 
               onBlur={field.handleBlur}
             />
             {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
-              <p className="mt-1.5 text-xs text-red-400">{field.state.meta.errors.join(', ')}</p>
+              <p className="mt-1.5 text-xs text-red-400">{fieldErrorText(field.state.meta.errors)}</p>
             )}
           </>
         )}
