@@ -3,6 +3,10 @@ Description=Nasr SQLite Backup
 
 [Service]
 Type=oneshot
+# Must match nasr.service. Running this as root makes /opt/nasr/backups and
+# every backup in it root-owned, which locks the app user out of writing
+# backups or restoring one. install.sh rewrites this line.
+User=rehan
 WorkingDirectory=/opt/nasr
 ExecStart=/bin/bash -c '\
   BACKUP_DIR=/opt/nasr/backups; \

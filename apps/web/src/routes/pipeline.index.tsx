@@ -6,8 +6,8 @@ import {
   getToday,
   stalenessLevel,
   isMissingNextAction,
-} from '@mizan/shared'
-import type { Opportunity, OpportunityStage } from '@mizan/shared'
+} from '@nasr/shared'
+import type { Opportunity, OpportunityStage } from '@nasr/shared'
 import {
   useReactTable,
   getCoreRowModel,
@@ -31,6 +31,14 @@ interface EnrichedOpp extends Opportunity {
 }
 
 const col = createColumnHelper<EnrichedOpp>()
+
+const statusTone: Record<string, string> = {
+  open: 'bg-primary-500/12 text-primary-300',
+  won: 'bg-emerald-500/12 text-emerald-300',
+  lost: 'bg-red-500/12 text-red-300',
+  ghosted: 'bg-elevated text-zinc-400',
+  withdrawn: 'bg-amber-500/12 text-amber-300',
+}
 
 function PipelinePage() {
   const oppsQuery = useOpportunities()
@@ -62,6 +70,9 @@ function PipelinePage() {
   const stages: OpportunityStage[] = ['lead', 'conversation', 'proposal', 'commitment']
   const funnel = stages.map((s) => ({ stage: s, count: open.filter((o) => o.stage === s).length }))
 
+  const stale = enriched.filter((o) => o.status === 'open' && o.staleness !== null)
+  const thinFollowUp = enriched.filter((o) => o.status === 'open' && (o.written_outbound_count ?? 0) < 2)
+
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -70,33 +81,36 @@ function PipelinePage() {
     col.accessor('name', {
       header: 'Name',
       cell: (info) => (
-        <Link to="/pipeline/$id" params={{ id: info.row.original.id }} className="font-medium text-primary-600 hover:underline">
+        <Link
+          to="/pipeline/$id"
+          params={{ id: info.row.original.id }}
+          className="font-medium text-zinc-100 transition hover:text-primary-300"
+        >
           {info.getValue()}
         </Link>
       ),
     }),
-    col.accessor('organisation', { header: 'Organisation' }),
+    col.accessor('organisation', {
+      header: 'Organisation',
+      cell: (info) => <span className="text-zinc-400">{info.getValue() ?? '—'}</span>,
+    }),
     col.accessor('stage', {
       header: 'Stage',
-      cell: (info) => <span className="capitalize">{info.getValue()}</span>,
+      cell: (info) => <span className="capitalize text-zinc-400">{info.getValue()}</span>,
     }),
     col.accessor('status', {
       header: 'Status',
       cell: (info) => {
         const v = info.getValue()
-        const colors: Record<string, string> = {
-          open: 'bg-blue-100 text-blue-800',
-          won: 'bg-green-100 text-green-800',
-          lost: 'bg-red-100 text-red-800',
-          ghosted: 'bg-gray-100 text-gray-800',
-          withdrawn: 'bg-amber-100 text-amber-800',
-        }
-        return <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${colors[v] ?? ''}`}>{v}</span>
+        return <span className={`chip ${statusTone[v] ?? 'bg-elevated text-zinc-400'}`}>{v}</span>
       },
     }),
     col.accessor('next_action_date', {
-      header: 'Next Action',
-      cell: (info) => info.getValue() ?? <span className="text-amber-500">Not set</span>,
+      header: 'Next action',
+      cell: (info) =>
+        info.getValue()
+          ? <span className="font-mono text-xs text-zinc-400">{info.getValue()}</span>
+          : <span className="text-xs text-amber-400/70">Not set</span>,
     }),
   ], [])
 
@@ -116,143 +130,206 @@ function PipelinePage() {
     getFilteredRowModel: getFilteredRowModel(),
   })
 
+  const openPct = Math.min(100, Math.round((open.length / liveTarget) * 100))
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-8">
+      <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Pipeline</h1>
-          {pipelineDay !== null && (
-            <p className="text-sm text-gray-500">
-              {pipelineDone ? '90-day window complete' : `Day ${pipelineDay} of 90`}
-            </p>
-          )}
+          <h1 className="text-2xl font-semibold tracking-tight">Pipeline</h1>
+          <p className="mt-1 text-sm text-zinc-500">
+            {pipelineDay !== null
+              ? pipelineDone ? '90-day window complete' : `Day ${pipelineDay} of 90`
+              : 'No window start date set'}
+          </p>
         </div>
-        <Link to="/pipeline/new" className="rounded-xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700">
-          + New
+        <Link to="/pipeline/new" className="btn btn-primary">
+          New opportunity
         </Link>
-      </div>
+      </header>
 
-      {/* Progress bar */}
-      <div className="rounded-xl bg-white p-4 shadow-sm">
-        <div className="mb-1 flex justify-between text-sm">
-          <span className="font-medium">Open Conversations</span>
-          <span className="font-bold">{open.length} / {liveTarget}</span>
-        </div>
-        <div className="h-3 overflow-hidden rounded-full bg-gray-200">
-          <div className="h-full rounded-full bg-primary-500 transition-all" style={{ width: `${Math.min(100, (open.length / liveTarget) * 100)}%` }} />
-        </div>
-      </div>
-
-      {/* Funnel + outcomes */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {funnel.map((f) => (
-          <div key={f.stage} className="rounded-xl bg-white p-3 text-center shadow-sm">
-            <p className="text-xs capitalize text-gray-500">{f.stage}</p>
-            <p className="text-xl font-bold">{f.count}</p>
+      {/* Open conversations vs target */}
+      <div className="card p-5">
+        <div className="flex items-end justify-between">
+          <div>
+            <p className="label">Open conversations</p>
+            <p className="mt-2 font-mono text-3xl font-semibold tabular-nums tracking-tight text-zinc-50">
+              {open.length}
+              <span className="ml-1 text-base font-normal text-zinc-600">/ {liveTarget}</span>
+            </p>
           </div>
-        ))}
+          <span className="font-mono text-xs text-zinc-500">{openPct}%</span>
+        </div>
+        <div className="mt-4 h-1 overflow-hidden rounded-full bg-elevated">
+          <div
+            className="h-full rounded-full bg-primary-500 transition-all duration-500"
+            style={{ width: `${openPct}%` }}
+          />
+        </div>
       </div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        <MiniStat label="Won" value={won} color="text-green-600" />
-        <MiniStat label="Lost" value={lost} color="text-red-600" />
-        <MiniStat label="Ghosted" value={ghosted} color="text-gray-600" />
-        <MiniStat label="Withdrawn" value={withdrawn} color="text-amber-600" />
-        <MiniStat label="Ghost Rate" value={`${ghostRate}%`} color="text-gray-600" />
-      </div>
+
+      {/* Funnel */}
+      <section className="space-y-3">
+        <h2 className="label">Open by stage</h2>
+        <div className="card grid grid-cols-2 divide-line sm:grid-cols-4 sm:divide-x">
+          {funnel.map((f) => (
+            <div key={f.stage} className="px-4 py-3.5">
+              <p className="text-xs capitalize text-zinc-500">{f.stage}</p>
+              <p className="mt-1 font-mono text-xl font-semibold tabular-nums text-zinc-100">{f.count}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Outcomes */}
+      <section className="space-y-3">
+        <h2 className="label">Outcomes</h2>
+        <div className="card grid grid-cols-2 divide-line sm:grid-cols-5 sm:divide-x">
+          <Outcome label="Won" value={won} tone="text-emerald-300" />
+          <Outcome label="Lost" value={lost} tone="text-red-300" />
+          <Outcome label="Ghosted" value={ghosted} tone="text-zinc-300" />
+          <Outcome label="Withdrawn" value={withdrawn} tone="text-amber-300" />
+          <Outcome label="Ghost rate" value={`${ghostRate}%`} tone="text-zinc-300" />
+        </div>
+      </section>
 
       {/* Flags */}
-      {missingAction.length > 0 && (
-        <div className="rounded-xl bg-amber-50 p-4">
-          <h3 className="mb-1 text-sm font-semibold text-amber-800">No Next Action ({missingAction.length})</h3>
-          {missingAction.map((o) => (
-            <Link key={o.id} to="/pipeline/$id" params={{ id: o.id }} className="block text-sm text-amber-700 hover:underline">
-              {o.name}
-            </Link>
-          ))}
-        </div>
-      )}
-      {enriched.filter((o) => o.status === 'open' && o.staleness !== null).length > 0 && (
-        <div className="rounded-xl bg-red-50 p-4">
-          <h3 className="mb-1 text-sm font-semibold text-red-800">
-            Stale ({enriched.filter((o) => o.status === 'open' && o.staleness !== null).length})
-          </h3>
-          {enriched.filter((o) => o.status === 'open' && o.staleness !== null).map((o) => (
-            <Link key={o.id} to="/pipeline/$id" params={{ id: o.id }} className="block text-sm text-red-700 hover:underline">
-              {o.name} <span className="text-xs">({o.staleness === 'red' ? '14+ days' : '7+ days'})</span>
-            </Link>
-          ))}
-        </div>
-      )}
-      {enriched.filter((o) => o.status === 'open' && (o.written_outbound_count ?? 0) < 2).length > 0 && (
-        <div className="rounded-xl bg-blue-50 p-4">
-          <h3 className="mb-1 text-sm font-semibold text-blue-800">
-            {'< 2 Written Follow-ups'} ({enriched.filter((o) => o.status === 'open' && (o.written_outbound_count ?? 0) < 2).length})
-          </h3>
-          {enriched.filter((o) => o.status === 'open' && (o.written_outbound_count ?? 0) < 2).map((o) => (
-            <Link key={o.id} to="/pipeline/$id" params={{ id: o.id }} className="block text-sm text-blue-700 hover:underline">
-              {o.name}
-            </Link>
-          ))}
-        </div>
+      {(missingAction.length > 0 || stale.length > 0 || thinFollowUp.length > 0) && (
+        <section className="space-y-3">
+          <h2 className="label">Needs attention</h2>
+          <div className="grid items-start gap-2 lg:grid-cols-3">
+            <FlagPanel
+              title="No next action"
+              tone="amber"
+              items={missingAction.map((o) => ({ id: o.id, label: o.name }))}
+            />
+            <FlagPanel
+              title="Stale"
+              tone="red"
+              items={stale.map((o) => ({
+                id: o.id,
+                label: o.name,
+                hint: o.staleness === 'red' ? '14d+' : '7d+',
+              }))}
+            />
+            <FlagPanel
+              title="Under 2 written follow-ups"
+              tone="primary"
+              items={thinFollowUp.map((o) => ({
+                id: o.id,
+                label: o.name,
+                hint: `${o.written_outbound_count ?? 0}`,
+              }))}
+            />
+          </div>
+        </section>
       )}
 
-      {/* Filters */}
-      <div className="flex gap-2">
-        {['all', 'open', 'won', 'lost', 'ghosted', 'withdrawn'].map((s) => (
-          <button
-            key={s}
-            onClick={() => setStatusFilter(s)}
-            className={`rounded-lg px-3 py-1 text-xs font-semibold capitalize transition ${statusFilter === s ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
+      {/* Filters + table */}
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center gap-1 rounded-lg border border-line bg-panel p-1">
+          {['all', 'open', 'won', 'lost', 'ghosted', 'withdrawn'].map((s) => (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize transition ${
+                statusFilter === s
+                  ? 'bg-elevated text-zinc-100'
+                  : 'text-zinc-500 hover:text-zinc-200'
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
-        <table className="w-full text-sm">
-          <thead>
-            {table.getHeaderGroups().map((hg) => (
-              <tr key={hg.id} className="border-b border-gray-100">
-                {hg.headers.map((h) => (
-                  <th
-                    key={h.id}
-                    className="cursor-pointer px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 select-none"
-                    onClick={h.column.getToggleSortingHandler()}
-                  >
-                    {flexRender(h.column.columnDef.header, h.getContext())}
-                    {{ asc: ' ↑', desc: ' ↓' }[h.column.getIsSorted() as string] ?? ''}
-                  </th>
+        <div className="card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                {table.getHeaderGroups().map((hg) => (
+                  <tr key={hg.id} className="border-b border-line">
+                    {hg.headers.map((h) => (
+                      <th
+                        key={h.id}
+                        onClick={h.column.getToggleSortingHandler()}
+                        className="cursor-pointer select-none whitespace-nowrap px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-zinc-500 transition hover:text-zinc-300"
+                      >
+                        {flexRender(h.column.columnDef.header, h.getContext())}
+                        <span className="text-zinc-600">
+                          {{ asc: ' ↑', desc: ' ↓' }[h.column.getIsSorted() as string] ?? ''}
+                        </span>
+                      </th>
+                    ))}
+                  </tr>
                 ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="border-b border-gray-50 hover:bg-gray-50">
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-4 py-3">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
+              </thead>
+              <tbody>
+                {table.getRowModel().rows.map((row) => (
+                  <tr key={row.id} className="border-b border-line/60 transition last:border-0 hover:bg-elevated">
+                    {row.getVisibleCells().map((cell) => (
+                      <td key={cell.id} className="whitespace-nowrap px-4 py-3">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    ))}
+                  </tr>
                 ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {table.getRowModel().rows.length === 0 && (
-          <p className="py-12 text-center text-gray-400">No opportunities found</p>
-        )}
-      </div>
+              </tbody>
+            </table>
+          </div>
+          {table.getRowModel().rows.length === 0 && (
+            <p className="py-16 text-center text-sm text-zinc-600">No opportunities found.</p>
+          )}
+        </div>
+      </section>
     </div>
   )
 }
 
-function MiniStat({ label, value, color }: { label: string; value: number | string; color: string }) {
+function Outcome({ label, value, tone }: { label: string; value: number | string; tone: string }) {
   return (
-    <div className="rounded-xl bg-white p-3 text-center shadow-sm">
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className={`text-lg font-bold ${color}`}>{value}</p>
+    <div className="px-4 py-3.5">
+      <p className="text-xs text-zinc-500">{label}</p>
+      <p className={`mt-1 font-mono text-xl font-semibold tabular-nums ${tone}`}>{value}</p>
+    </div>
+  )
+}
+
+const flagTone = {
+  amber: 'text-amber-300',
+  red: 'text-red-300',
+  primary: 'text-primary-300',
+} as const
+
+function FlagPanel({
+  title,
+  tone,
+  items,
+}: {
+  title: string
+  tone: keyof typeof flagTone
+  items: Array<{ id: string; label: string; hint?: string }>
+}) {
+  if (items.length === 0) return null
+  return (
+    <div className="card overflow-hidden">
+      <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
+        <span className={`text-xs font-semibold ${flagTone[tone]}`}>{title}</span>
+        <span className="font-mono text-xs text-zinc-600">{items.length}</span>
+      </div>
+      <div className="divide-y divide-line">
+        {items.map((item) => (
+          <Link
+            key={item.id}
+            to="/pipeline/$id"
+            params={{ id: item.id }}
+            className="flex items-center justify-between gap-3 px-4 py-2.5 transition hover:bg-elevated"
+          >
+            <span className="truncate text-sm text-zinc-300">{item.label}</span>
+            {item.hint && <span className="shrink-0 font-mono text-[11px] text-zinc-600">{item.hint}</span>}
+          </Link>
+        ))}
+      </div>
     </div>
   )
 }

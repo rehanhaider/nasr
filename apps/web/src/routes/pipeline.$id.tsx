@@ -1,15 +1,22 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { useOpportunity } from '../data/queries.js'
+import { useOpportunity, useSettings } from '../data/queries.js'
 import { useUpdateOpportunity, useDeleteOpportunity, useCreateTouch } from '../data/mutations.js'
 import { useForm } from '@tanstack/react-form'
-import { touchCreateSchema, getToday } from '@mizan/shared'
-import type { OpportunityStatus, TouchChannel, TouchDirection } from '@mizan/shared'
-import { useSettings } from '../data/queries.js'
+import { touchCreateSchema, getToday } from '@nasr/shared'
+import type { OpportunityStatus, TouchChannel, TouchDirection } from '@nasr/shared'
 import { useState } from 'react'
 
 export const Route = createFileRoute('/pipeline/$id')({
   component: OpportunityDetailPage,
 })
+
+const statusTone: Record<string, string> = {
+  open: 'bg-primary-500/12 text-primary-300',
+  won: 'bg-emerald-500/12 text-emerald-300',
+  lost: 'bg-red-500/12 text-red-300',
+  ghosted: 'bg-elevated text-zinc-400',
+  withdrawn: 'bg-amber-500/12 text-amber-300',
+}
 
 function OpportunityDetailPage() {
   const { id } = Route.useParams()
@@ -23,10 +30,8 @@ function OpportunityDetailPage() {
   const today = getToday(timezone)
   const [statusError, setStatusError] = useState<string | null>(null)
 
-  const opp = oppQuery.data
-  if (oppQuery.isLoading) return <div className="py-20 text-center text-gray-400">Loading...</div>
-  if (!opp) return <div className="py-20 text-center text-gray-400">Not found</div>
-
+  // Declared before any early return: bailing out above a hook changes the hook
+  // count between renders and React throws once the query resolves.
   const touchForm = useForm({
     defaultValues: {
       opportunity_id: id,
@@ -43,6 +48,10 @@ function OpportunityDetailPage() {
     },
   })
 
+  const opp = oppQuery.data
+  if (oppQuery.isLoading) return <p className="py-24 text-center text-sm text-zinc-600">Loading…</p>
+  if (!opp) return <p className="py-24 text-center text-sm text-zinc-600">Not found.</p>
+
   function handleStatusChange(newStatus: OpportunityStatus) {
     setStatusError(null)
     updateOpp.mutate(
@@ -52,77 +61,102 @@ function OpportunityDetailPage() {
   }
 
   const ghostedDisabled = !opp.ghostedEligibility?.eligible
-  const staleClass = opp.staleness === 'red' ? 'border-red-500' : opp.staleness === 'amber' ? 'border-amber-500' : 'border-transparent'
+  const staleRing =
+    opp.staleness === 'red'
+      ? 'border-red-500/40'
+      : opp.staleness === 'amber'
+        ? 'border-amber-500/40'
+        : 'border-line'
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <Link to="/pipeline" className="text-sm text-primary-600 hover:underline">← Back</Link>
-          <h1 className="mt-1 text-2xl font-bold">{opp.name}</h1>
-          {opp.organisation && <p className="text-gray-500">{opp.organisation}</p>}
-        </div>
-        <div className="flex gap-2">
-          <button onClick={() => { deleteOpp.mutate(id, { onSuccess: () => navigate({ to: '/pipeline' }) }) }} className="rounded-lg bg-red-100 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-200">
+    <div className="space-y-8">
+      <header className="space-y-4">
+        <Link to="/pipeline" className="inline-flex items-center gap-1.5 text-xs text-zinc-500 transition hover:text-zinc-200">
+          <span aria-hidden>←</span> Pipeline
+        </Link>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-semibold tracking-tight">{opp.name}</h1>
+              <span className={`chip ${statusTone[opp.status] ?? 'bg-elevated text-zinc-400'}`}>
+                {opp.status}
+              </span>
+            </div>
+            {opp.organisation && <p className="mt-1 text-sm text-zinc-500">{opp.organisation}</p>}
+          </div>
+          <button
+            onClick={() => deleteOpp.mutate(id, { onSuccess: () => navigate({ to: '/pipeline' }) })}
+            className="btn btn-danger btn-sm"
+          >
             Delete
           </button>
         </div>
-      </div>
+      </header>
 
       {opp.missingNextAction && (
-        <div className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Missing next action — set one to clear this flag.
+        <div className="rounded-xl border border-amber-500/25 bg-amber-500/8 px-4 py-3 text-sm text-amber-200">
+          No next action set.
         </div>
       )}
 
       {statusError && (
-        <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{statusError}</div>
+        <div className="rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          {statusError}
+        </div>
       )}
 
-      <div className={`rounded-xl border-2 bg-white p-5 shadow-sm ${staleClass}`}>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Type" value={opp.type} />
-          <Field label="Stage" value={opp.stage} />
-          <Field label="Status" value={opp.status} />
+      {/* Detail */}
+      <div className={`card border ${staleRing}`}>
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-5 p-5 sm:grid-cols-3">
+          <Field label="Type" value={opp.type} caps />
+          <Field label="Stage" value={opp.stage} caps />
           <Field label="Source" value={opp.source ?? '—'} />
           <Field label="Contact" value={opp.contact_name ?? '—'} />
           <Field label="Channel" value={opp.contact_channel ?? '—'} />
-          <Field label="Opened" value={opp.opened_date} />
-          <Field label="Next Action" value={opp.next_action ?? '—'} />
-          <Field label="Next Action Date" value={opp.next_action_date ?? '—'} />
-          <Field label="Written Outbounds" value={String(opp.writtenOutboundCount)} />
-        </div>
-        {opp.notes && <p className="mt-4 whitespace-pre-wrap text-sm text-gray-600">{opp.notes}</p>}
+          <Field label="Opened" value={opp.opened_date} mono />
+          <Field label="Next action" value={opp.next_action ?? '—'} />
+          <Field label="Next action date" value={opp.next_action_date ?? '—'} mono />
+          <Field label="Written outbounds" value={String(opp.writtenOutboundCount)} mono />
+        </dl>
 
-        {/* Quick status buttons */}
-        <div className="mt-4 flex flex-wrap gap-2">
-          {opp.status === 'open' && (
+        {opp.notes && (
+          <div className="border-t border-line px-5 py-4">
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-400">{opp.notes}</p>
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center gap-2 border-t border-line px-5 py-4">
+          {opp.status === 'open' ? (
             <>
-              <button onClick={() => handleStatusChange('won')} className="rounded-lg bg-green-100 px-3 py-1.5 text-xs font-semibold text-green-800 hover:bg-green-200">Mark Won</button>
-              <button onClick={() => handleStatusChange('lost')} className="rounded-lg bg-red-100 px-3 py-1.5 text-xs font-semibold text-red-800 hover:bg-red-200">Mark Lost</button>
-              <button onClick={() => handleStatusChange('withdrawn')} className="rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-200">Withdrawn</button>
+              <button onClick={() => handleStatusChange('won')} className="btn btn-secondary btn-sm">Mark won</button>
+              <button onClick={() => handleStatusChange('lost')} className="btn btn-secondary btn-sm">Mark lost</button>
+              <button onClick={() => handleStatusChange('withdrawn')} className="btn btn-secondary btn-sm">Withdrawn</button>
               <button
                 onClick={() => handleStatusChange('ghosted')}
                 disabled={ghostedDisabled}
-                className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-800 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-40"
                 title={ghostedDisabled ? opp.ghostedEligibility?.reason ?? '' : 'Mark as ghosted'}
+                className="btn btn-secondary btn-sm"
               >
                 Ghosted
               </button>
               {ghostedDisabled && opp.ghostedEligibility?.reason && (
-                <span className="self-center text-xs text-gray-400">{opp.ghostedEligibility.reason}</span>
+                <span className="text-xs text-zinc-600">{opp.ghostedEligibility.reason}</span>
               )}
             </>
-          )}
-          {opp.status !== 'open' && (
-            <button onClick={() => handleStatusChange('open')} className="rounded-lg bg-blue-100 px-3 py-1.5 text-xs font-semibold text-blue-800 hover:bg-blue-200">Reopen</button>
+          ) : (
+            <button onClick={() => handleStatusChange('open')} className="btn btn-secondary btn-sm">Reopen</button>
           )}
         </div>
       </div>
 
       {/* Touch log */}
-      <section>
-        <h2 className="mb-3 text-lg font-semibold">Touch Log</h2>
+      <section className="space-y-3">
+        <div className="flex items-baseline justify-between">
+          <h2 className="label">Touch log</h2>
+          <span className="font-mono text-xs text-zinc-600">
+            {opp.lastTouchDate ? `last ${opp.lastTouchDate}` : 'no touches'}
+          </span>
+        </div>
 
         <form
           onSubmit={(e) => {
@@ -130,56 +164,77 @@ function OpportunityDetailPage() {
             e.stopPropagation()
             touchForm.handleSubmit()
           }}
-          className="mb-4 grid gap-3 rounded-xl bg-gray-50 p-4 sm:grid-cols-2"
+          className="card grid gap-3 p-4 sm:grid-cols-2"
         >
           <touchForm.Field name="date" children={(f) => (
-            <input type="date" className="rounded-lg border px-3 py-2 text-sm" value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} />
+            <input type="date" className="input" value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} />
           )} />
           <touchForm.Field name="direction" children={(f) => (
-            <select className="rounded-lg border px-3 py-2 text-sm" value={f.state.value} onChange={(e) => f.handleChange(e.target.value as TouchDirection)}>
+            <select className="input" value={f.state.value} onChange={(e) => f.handleChange(e.target.value as TouchDirection)}>
               <option value="outbound">Outbound</option>
               <option value="inbound">Inbound</option>
             </select>
           )} />
           <touchForm.Field name="channel" children={(f) => (
-            <select className="rounded-lg border px-3 py-2 text-sm" value={f.state.value} onChange={(e) => f.handleChange(e.target.value as TouchChannel)}>
+            <select className="input" value={f.state.value} onChange={(e) => f.handleChange(e.target.value as TouchChannel)}>
               {['email', 'linkedin', 'call', 'whatsapp', 'in_person', 'other'].map((c) => (
                 <option key={c} value={c}>{c.replace('_', ' ')}</option>
               ))}
             </select>
           )} />
           <touchForm.Field name="written" children={(f) => (
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={f.state.value} onChange={(e) => f.handleChange(e.target.checked)} className="rounded" />
+            <label className="flex cursor-pointer items-center gap-2.5 px-1 text-sm text-zinc-300">
+              <input
+                type="checkbox"
+                checked={f.state.value}
+                onChange={(e) => f.handleChange(e.target.checked)}
+                className="h-4 w-4 rounded border-line-strong bg-elevated accent-primary-500"
+              />
               Written communication
             </label>
           )} />
           <touchForm.Field name="note" children={(f) => (
-            <input type="text" placeholder="Note (optional)" className="rounded-lg border px-3 py-2 text-sm sm:col-span-2" value={f.state.value} onChange={(e) => f.handleChange(e.target.value)} />
+            <input
+              type="text"
+              placeholder="Note (optional)"
+              className="input sm:col-span-2"
+              value={f.state.value}
+              onChange={(e) => f.handleChange(e.target.value)}
+            />
           )} />
-          <button type="submit" disabled={createTouch.isPending} className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50 sm:col-span-2">
-            Add Touch
-          </button>
+          <div className="sm:col-span-2">
+            <button type="submit" disabled={createTouch.isPending} className="btn btn-primary btn-sm">
+              {createTouch.isPending ? 'Adding…' : 'Add touch'}
+            </button>
+          </div>
         </form>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {opp.touches?.map((t) => (
-            <div key={t.id} className="flex items-start gap-3 rounded-lg bg-white px-4 py-3 shadow-sm">
-              <div className={`mt-0.5 h-2 w-2 rounded-full ${t.direction === 'outbound' ? 'bg-primary-500' : 'bg-green-500'}`} />
-              <div className="flex-1">
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="font-medium capitalize">{t.direction}</span>
-                  <span className="text-gray-400">·</span>
-                  <span className="capitalize text-gray-500">{t.channel.replace('_', ' ')}</span>
-                  {t.written && <span className="rounded bg-primary-50 px-1.5 text-xs text-primary-600">written</span>}
+            <div key={t.id} className="card flex items-start gap-3 px-4 py-3">
+              <span
+                className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${
+                  t.direction === 'outbound' ? 'bg-primary-400' : 'bg-emerald-400'
+                }`}
+              />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                  <span className="font-medium capitalize text-zinc-200">{t.direction}</span>
+                  <span className="text-zinc-700">·</span>
+                  <span className="capitalize text-zinc-500">{t.channel.replace('_', ' ')}</span>
+                  {t.written && (
+                    <span className="chip bg-primary-500/10 text-primary-300/80">written</span>
+                  )}
+                  <span className="ml-auto font-mono text-[11px] text-zinc-600">{t.date}</span>
                 </div>
-                <p className="text-xs text-gray-400">{t.date}</p>
-                {t.note && <p className="mt-1 text-sm text-gray-600">{t.note}</p>}
+                {t.note && <p className="mt-1 text-sm text-zinc-400">{t.note}</p>}
               </div>
             </div>
           ))}
           {(!opp.touches || opp.touches.length === 0) && (
-            <p className="py-4 text-center text-sm text-gray-400">No touches recorded</p>
+            <div className="rounded-xl border border-dashed border-line py-12 text-center">
+              <p className="text-sm text-zinc-600">No touches recorded.</p>
+            </div>
           )}
         </div>
       </section>
@@ -187,11 +242,15 @@ function OpportunityDetailPage() {
   )
 }
 
-function Field({ label, value }: { label: string; value: string }) {
+// `caps` is only for enum values (type, stage). Free text — contact names,
+// next actions — must render exactly as the user typed it.
+function Field({ label, value, mono, caps }: { label: string; value: string; mono?: boolean; caps?: boolean }) {
   return (
     <div>
-      <dt className="text-xs font-medium text-gray-500">{label}</dt>
-      <dd className="text-sm font-medium capitalize">{value}</dd>
+      <dt className="label">{label}</dt>
+      <dd className={`mt-1.5 text-sm text-zinc-200 ${mono ? 'font-mono text-xs' : ''} ${caps ? 'capitalize' : ''}`}>
+        {value}
+      </dd>
     </div>
   )
 }

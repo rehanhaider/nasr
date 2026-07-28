@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useForm } from '@tanstack/react-form'
-import { loginRequestSchema } from '@mizan/shared'
+import { loginRequestSchema } from '@nasr/shared'
 import { useAuthStatus } from '../data/queries.js'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiPost } from '../data/api.js'
@@ -37,54 +37,73 @@ function LoginPage() {
   })
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-primary-900 px-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-xl">
-        <h1 className="mb-2 text-center text-2xl font-bold text-gray-900">Mizan</h1>
-        <p className="mb-6 text-center text-sm text-gray-500">Enter your PIN to continue</p>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4">
+      {/* Ambient accent behind the card. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-60 blur-[100px]"
+        style={{ background: 'radial-gradient(circle, var(--color-primary-700) 0%, transparent 68%)' }}
+      />
 
-        {error && (
-          <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
+      <div className="relative w-full max-w-[340px]">
+        <div className="mb-8 flex flex-col items-center gap-3">
+          <span className="h-2 w-2 rounded-full bg-primary-500 shadow-[0_0_14px_var(--color-primary-500)]" />
+          <div className="text-center">
+            <h1 className="text-xl font-semibold tracking-tight">nasr</h1>
+            <p className="mt-1 text-sm text-zinc-500">Enter your PIN to continue</p>
           </div>
-        )}
+        </div>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            form.handleSubmit()
-          }}
-          className="space-y-4"
-        >
-          <form.Field
-            name="pin"
-            children={(field) => (
-              <div>
-                <input
-                  type="password"
-                  inputMode="numeric"
-                  placeholder="PIN"
-                  autoFocus
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-center text-2xl tracking-[0.5em] outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-200"
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
-                />
-                {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
-                  <p className="mt-1 text-sm text-red-500">{field.state.meta.errors.join(', ')}</p>
-                )}
-              </div>
-            )}
-          />
+        <div className="card p-6">
+          {error && (
+            <div className="mb-4 rounded-lg border border-red-500/25 bg-red-500/10 px-3 py-2.5 text-sm text-red-300">
+              {error}
+            </div>
+          )}
 
-          <button
-            type="submit"
-            disabled={loginMutation.isPending}
-            className="w-full rounded-xl bg-primary-600 py-3 font-semibold text-white transition hover:bg-primary-700 disabled:opacity-50"
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              form.handleSubmit()
+            }}
+            className="space-y-4"
           >
-            {loginMutation.isPending ? 'Verifying...' : 'Unlock'}
-          </button>
-        </form>
+            <form.Field
+              name="pin"
+              children={(field) => (
+                <div>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    placeholder="••••"
+                    autoFocus
+                    autoComplete="current-password"
+                    className="input py-3 text-center font-mono text-xl tracking-[0.6em] placeholder:tracking-[0.4em]"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                  />
+                  {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
+                    <p className="mt-2 text-xs text-red-400">{field.state.meta.errors.join(', ')}</p>
+                  )}
+                </div>
+              )}
+            />
+
+            <button
+              type="submit"
+              disabled={loginMutation.isPending}
+              className="btn btn-primary w-full py-2.5"
+            >
+              {loginMutation.isPending ? 'Verifying…' : 'Unlock'}
+            </button>
+          </form>
+        </div>
+
+        <p className="mt-6 text-center text-xs text-zinc-700">
+          Locks for 10 minutes after 5 failed attempts.
+        </p>
       </div>
     </div>
   )

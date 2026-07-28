@@ -26,7 +26,11 @@ echo "pnpm $(pnpm -v)"
 echo "Setting up $INSTALL_DIR..."
 sudo mkdir -p "$INSTALL_DIR"
 sudo chown "$SERVICE_USER":"$SERVICE_USER" "$INSTALL_DIR"
-rsync -a --exclude node_modules --exclude .output --exclude data --exclude backups --exclude .env ./ "$INSTALL_DIR/"
+# data/ and backups/ are anchored with a leading slash: they name the runtime
+# directories at the install root only. Unanchored, rsync also matches
+# apps/web/src/data, which silently drops the client data layer from the build.
+rsync -a --exclude node_modules --exclude .output --exclude .git \
+  --exclude /data --exclude /backups --exclude /.env ./ "$INSTALL_DIR/"
 
 cd "$INSTALL_DIR"
 
@@ -138,8 +142,14 @@ sudo cp "$INSTALL_DIR/nasr.service" /etc/systemd/system/
 sudo cp "$INSTALL_DIR/nasr-backup.service" /etc/systemd/system/
 sudo cp "$INSTALL_DIR/nasr-backup.timer" /etc/systemd/system/
 
-# Update user in service file
+# Update user in both units. The backup unit must run as the same user, or it
+# creates root-owned backups the app user cannot write to or restore from.
 sudo sed -i "s/User=rehan/User=$SERVICE_USER/" /etc/systemd/system/nasr.service
+sudo sed -i "s/User=rehan/User=$SERVICE_USER/" /etc/systemd/system/nasr-backup.service
+
+# An earlier install may have left a root-owned backups directory behind.
+sudo mkdir -p "$INSTALL_DIR/backups"
+sudo chown -R "$SERVICE_USER":"$SERVICE_USER" "$INSTALL_DIR/backups"
 
 sudo systemctl daemon-reload
 sudo systemctl enable --now nasr.service

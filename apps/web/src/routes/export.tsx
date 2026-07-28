@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/export')({
   component: ExportPage,
@@ -12,27 +12,62 @@ function ExportPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <h1 className="text-2xl font-bold">Export Data</h1>
-      <p className="text-sm text-gray-500">Download your data as JSON or CSV files.</p>
+    <div className="mx-auto max-w-2xl space-y-8">
+      <header className="space-y-4">
+        <Link to="/settings" className="inline-flex items-center gap-1.5 text-xs text-zinc-500 transition hover:text-zinc-200">
+          <span aria-hidden>←</span> Settings
+        </Link>
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Export</h1>
+          <p className="mt-1 text-sm text-zinc-500">Your data, in formats you can read without this app.</p>
+        </div>
+      </header>
 
-      <div className="space-y-3">
-        <ExportButton label="Full JSON Export" description="All tables, all data" onClick={() => download('json')} />
-        <ExportButton label="Daily Practices CSV" description="Salah, adhkar, istighfar records" onClick={() => download('csv', 'deen')} />
-        <ExportButton label="Pipeline CSV" description="Opportunities and their details" onClick={() => download('csv', 'pipeline')} />
+      <div className="card divide-y divide-line">
+        <ExportRow
+          label="Full JSON export"
+          description="Every table, every row"
+          badge="json"
+          onClick={() => download('json')}
+        />
+        <ExportRow
+          label="Daily practices"
+          description="Salah, adhkar and istighfar records"
+          badge="csv"
+          onClick={() => download('csv', 'deen')}
+        />
+        <ExportRow
+          label="Pipeline"
+          description="Opportunities and their details"
+          badge="csv"
+          onClick={() => download('csv', 'pipeline')}
+        />
       </div>
     </div>
   )
 }
 
-function ExportButton({ label, description, onClick }: { label: string; description: string; onClick: () => void }) {
+function ExportRow({
+  label,
+  description,
+  badge,
+  onClick,
+}: {
+  label: string
+  description: string
+  badge: string
+  onClick: () => void
+}) {
   return (
     <button
       onClick={onClick}
-      className="w-full rounded-xl bg-white p-5 text-left shadow-sm transition hover:shadow-md"
+      className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left transition hover:bg-elevated"
     >
-      <p className="font-semibold text-gray-900">{label}</p>
-      <p className="text-sm text-gray-500">{description}</p>
+      <span>
+        <span className="block text-sm font-medium text-zinc-200">{label}</span>
+        <span className="block text-xs text-zinc-500">{description}</span>
+      </span>
+      <span className="chip shrink-0 bg-elevated font-mono text-zinc-400">{badge}</span>
     </button>
   )
 }

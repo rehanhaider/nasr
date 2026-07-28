@@ -1,11 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router'
+import type { ReactNode } from 'react'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { useSettings } from '../data/queries.js'
 import { useUpdateSettings, useLogout } from '../data/mutations.js'
 import { useForm } from '@tanstack/react-form'
-import { settingsUpdateSchema } from '@mizan/shared'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiPost } from '../data/api.js'
-import { queryKeys } from '../data/query-keys.js'
 
 export const Route = createFileRoute('/settings')({
   component: SettingsPage,
@@ -14,15 +11,7 @@ export const Route = createFileRoute('/settings')({
 function SettingsPage() {
   const settingsQuery = useSettings()
   const updateSettings = useUpdateSettings()
-  const qc = useQueryClient()
-
-  const logoutMutation = useMutation({
-    mutationFn: () => apiPost<{ ok: boolean }>('/auth/logout', {}),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.auth.status })
-      window.location.href = '/login'
-    },
-  })
+  const logout = useLogout()
 
   const s = settingsQuery.data
 
@@ -46,12 +35,15 @@ function SettingsPage() {
   })
 
   if (settingsQuery.isLoading) {
-    return <div className="py-20 text-center text-gray-400">Loading...</div>
+    return <p className="py-24 text-center text-sm text-zinc-600">Loading…</p>
   }
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
-      <h1 className="text-2xl font-bold">Settings</h1>
+      <header>
+        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+        <p className="mt-1 text-sm text-zinc-500">Targets, dates and the clock everything is measured against.</p>
+      </header>
 
       <form
         onSubmit={(e) => {
@@ -59,110 +51,134 @@ function SettingsPage() {
           e.stopPropagation()
           form.handleSubmit()
         }}
-        className="space-y-4"
+        className="space-y-6"
       >
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Timezone</label>
-          <form.Field
-            name="timezone"
-            children={(field) => (
-              <input
-                type="text"
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 outline-none focus:border-primary-500"
-                value={field.state.value}
-                onChange={(e) => field.handleChange(e.target.value)}
-              />
-            )}
-          />
-          <p className="mt-1 text-xs text-gray-400">e.g. Asia/Kolkata, America/New_York</p>
+        <div className="card divide-y divide-line">
+          <Row label="Timezone" hint="e.g. Asia/Kolkata, America/New_York">
+            <form.Field
+              name="timezone"
+              children={(field) => (
+                <input
+                  type="text"
+                  className="input"
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                />
+              )}
+            />
+          </Row>
+
+          <Row label="40-day cycle start">
+            <form.Field
+              name="cycle_start_date"
+              children={(field) => (
+                <input
+                  type="date"
+                  className="input"
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                />
+              )}
+            />
+          </Row>
+
+          <Row label="90-day pipeline start">
+            <form.Field
+              name="pipeline_start_date"
+              children={(field) => (
+                <input
+                  type="date"
+                  className="input"
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                />
+              )}
+            />
+          </Row>
+
+          <Row label="Istighfar daily target">
+            <form.Field
+              name="istighfar_target"
+              children={(field) => (
+                <input
+                  type="number"
+                  min="1"
+                  className="input font-mono"
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                />
+              )}
+            />
+          </Row>
+
+          <Row label="Open conversations target">
+            <form.Field
+              name="live_target"
+              children={(field) => (
+                <input
+                  type="number"
+                  min="1"
+                  className="input font-mono"
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                />
+              )}
+            />
+          </Row>
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">40-Day Cycle Start</label>
-          <form.Field
-            name="cycle_start_date"
-            children={(field) => (
-              <input
-                type="date"
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 outline-none focus:border-primary-500"
-                value={field.state.value}
-                onChange={(e) => field.handleChange(e.target.value)}
-              />
-            )}
-          />
+        <div className="flex items-center gap-3">
+          <button type="submit" disabled={updateSettings.isPending} className="btn btn-primary">
+            {updateSettings.isPending ? 'Saving…' : 'Save settings'}
+          </button>
+          {updateSettings.isSuccess && (
+            <span className="text-xs text-emerald-400">Saved.</span>
+          )}
         </div>
-
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">90-Day Pipeline Start</label>
-          <form.Field
-            name="pipeline_start_date"
-            children={(field) => (
-              <input
-                type="date"
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 outline-none focus:border-primary-500"
-                value={field.state.value}
-                onChange={(e) => field.handleChange(e.target.value)}
-              />
-            )}
-          />
-        </div>
-
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Istighfar Daily Target</label>
-          <form.Field
-            name="istighfar_target"
-            children={(field) => (
-              <input
-                type="number"
-                min="1"
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 outline-none focus:border-primary-500"
-                value={field.state.value}
-                onChange={(e) => field.handleChange(e.target.value)}
-              />
-            )}
-          />
-        </div>
-
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Open Conversations Target</label>
-          <form.Field
-            name="live_target"
-            children={(field) => (
-              <input
-                type="number"
-                min="1"
-                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 outline-none focus:border-primary-500"
-                value={field.state.value}
-                onChange={(e) => field.handleChange(e.target.value)}
-              />
-            )}
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={updateSettings.isPending}
-          className="rounded-xl bg-primary-600 px-6 py-2.5 font-semibold text-white hover:bg-primary-700 disabled:opacity-50"
-        >
-          {updateSettings.isPending ? 'Saving...' : 'Save Settings'}
-        </button>
-
-        {updateSettings.isSuccess && (
-          <p className="text-sm text-green-600">Settings saved.</p>
-        )}
       </form>
 
-      <hr className="border-gray-200" />
-
-      <div>
-        <h2 className="mb-3 text-lg font-semibold">Account</h2>
-        <button
-          onClick={() => logoutMutation.mutate()}
-          className="rounded-xl bg-red-100 px-6 py-2.5 font-semibold text-red-700 hover:bg-red-200"
+      <section className="space-y-3">
+        <h2 className="label">Data</h2>
+        <Link
+          to="/export"
+          className="card flex items-center justify-between px-4 py-3.5 transition hover:border-line-strong hover:bg-elevated"
         >
-          Log Out
-        </button>
+          <span>
+            <span className="block text-sm font-medium text-zinc-200">Export</span>
+            <span className="block text-xs text-zinc-500">Download everything as JSON or CSV</span>
+          </span>
+          <span aria-hidden className="text-zinc-600">→</span>
+        </Link>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="label">Account</h2>
+        <div className="card flex flex-wrap items-center justify-between gap-3 px-4 py-3.5">
+          <span>
+            <span className="block text-sm font-medium text-zinc-200">Log out</span>
+            <span className="block text-xs text-zinc-500">Ends this session on this device</span>
+          </span>
+          <button
+            onClick={() => logout.mutate(undefined, { onSuccess: () => { window.location.href = '/login' } })}
+            disabled={logout.isPending}
+            className="btn btn-danger btn-sm"
+          >
+            {logout.isPending ? 'Logging out…' : 'Log out'}
+          </button>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function Row({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+  return (
+    <div className="grid gap-2 px-4 py-4 sm:grid-cols-[1fr_260px] sm:items-center sm:gap-6">
+      <div>
+        <p className="text-sm font-medium text-zinc-200">{label}</p>
+        {hint && <p className="mt-0.5 text-xs text-zinc-600">{hint}</p>}
       </div>
+      {children}
     </div>
   )
 }

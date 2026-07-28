@@ -5,8 +5,11 @@ dist/
 *.db-journal
 *.db-wal
 *.db-shm
-data/
-backups/
+# Anchored: these are the runtime directories at the repo root. Unanchored,
+# they also match apps/web/src/data, which silently un-tracked the client
+# data layer.
+/data/
+/backups/
 .env
 .env.local
 .vinxi/

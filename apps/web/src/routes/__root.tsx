@@ -20,8 +20,9 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
-      { title: 'Mizan' },
-      { name: 'theme-color', content: '#1e3a8a' },
+      { title: 'Nasr' },
+      { name: 'theme-color', content: '#08080a' },
+      { name: 'color-scheme', content: 'dark' },
     ],
     links: [
       { rel: 'stylesheet', href: appCss },
@@ -43,49 +44,54 @@ function RootComponent() {
 }
 
 const navItems = [
-  { to: '/' as const, label: 'Today' },
-  { to: '/deen/history' as const, label: 'History' },
-  { to: '/pipeline' as const, label: 'Pipeline' },
-  { to: '/review' as const, label: 'Review' },
+  { to: '/' as const, label: 'Today', exact: true },
+  { to: '/deen/history' as const, label: 'History', exact: false },
+  { to: '/deen/observations' as const, label: 'Notes', exact: false },
+  { to: '/pipeline' as const, label: 'Pipeline', exact: false },
+  { to: '/review' as const, label: 'Review', exact: false },
 ]
+
+const navLink =
+  'shrink-0 rounded-md px-2.5 py-1.5 text-[13px] font-medium text-zinc-500 transition-colors hover:text-zinc-100 [&.active]:bg-elevated [&.active]:text-zinc-100'
 
 function RootDocument({ children }: { children: ReactNode }) {
   const location = useLocation()
   const isLogin = location.pathname === '/login'
 
   return (
-    <html lang="en" className="bg-gray-50 text-gray-900">
+    <html lang="en" className="bg-canvas">
       <head>
         <HeadContent />
       </head>
-      <body className="min-h-screen font-sans antialiased">
+      <body className="min-h-screen bg-canvas text-zinc-100 antialiased">
         {!isLogin && (
-          <nav className="sticky top-0 z-50 bg-primary-900 text-white shadow-md">
-            <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-              <Link to="/" className="text-lg font-bold tracking-tight">
-                Mizan
+          <header className="sticky top-0 z-50 border-b border-line bg-canvas/85 backdrop-blur-md">
+            <div className="mx-auto flex h-14 max-w-5xl items-center gap-4 px-4 sm:gap-6">
+              <Link to="/" className="flex shrink-0 items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary-500 shadow-[0_0_10px_var(--color-primary-500)]" />
+                <span className="text-[15px] font-semibold tracking-tight text-zinc-100">nasr</span>
               </Link>
-              <div className="flex gap-1">
+
+              <nav className="flex flex-1 items-center gap-0.5 overflow-x-auto">
                 {navItems.map((item) => (
                   <Link
                     key={item.to}
                     to={item.to}
-                    className="rounded-lg px-3 py-1.5 text-sm font-medium transition-colors hover:bg-primary-800 [&.active]:bg-primary-700"
+                    activeOptions={{ exact: item.exact }}
+                    className={navLink}
                   >
                     {item.label}
                   </Link>
                 ))}
-                <Link
-                  to="/settings"
-                  className="rounded-lg px-3 py-1.5 text-sm font-medium transition-colors hover:bg-primary-800 [&.active]:bg-primary-700"
-                >
-                  Settings
-                </Link>
-              </div>
+              </nav>
+
+              <Link to="/settings" className={navLink}>
+                Settings
+              </Link>
             </div>
-          </nav>
+          </header>
         )}
-        <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+        <main className={isLogin ? '' : 'mx-auto max-w-5xl px-4 py-8'}>{children}</main>
         <Scripts />
       </body>
     </html>

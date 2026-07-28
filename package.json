@@ -10,7 +10,8 @@
     "start": "pnpm --filter @nasr/web start",
     "test": "pnpm -r test",
     "db:migrate": "pnpm --filter @nasr/web db:migrate",
-    "db:generate": "pnpm --filter @nasr/web db:generate"
+    "db:generate": "pnpm --filter @nasr/web db:generate",
+    "reset": "bash scripts/reset.sh"
   },
   "engines": {
     "node": ">=22"

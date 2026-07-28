@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useOpportunities, useSettings } from '../data/queries.js'
-import { getToday, isMissingNextAction, stalenessLevel } from '@mizan/shared'
+import { getToday, isMissingNextAction, stalenessLevel } from '@nasr/shared'
 
 export const Route = createFileRoute('/review')({
   component: ReviewPage,
@@ -22,21 +22,24 @@ function ReviewPage() {
   })
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Weekly Review</h1>
-        <p className="text-sm text-gray-500">
-          Work through everything that needs attention.
-        </p>
-      </div>
+    <div className="space-y-8">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Weekly review</h1>
+          <p className="mt-1 text-sm text-zinc-500">Everything that needs attention, in one pass.</p>
+        </div>
+        <span className="font-mono text-xs text-zinc-600">
+          {reviewItems.length} item{reviewItems.length !== 1 ? 's' : ''}
+        </span>
+      </header>
 
       {reviewItems.length === 0 ? (
-        <div className="rounded-xl bg-green-50 p-8 text-center">
-          <p className="text-lg font-semibold text-green-800">All clear</p>
-          <p className="text-sm text-green-600">No items need attention right now.</p>
+        <div className="card border-emerald-500/20 bg-emerald-500/[0.04] py-16 text-center">
+          <p className="text-base font-medium text-emerald-200">All clear</p>
+          <p className="mt-1 text-sm text-emerald-300/60">Nothing needs attention right now.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {reviewItems.map((opp: any) => {
             const missing = isMissingNextAction(opp)
             const stale = stalenessLevel(opp.last_touch_date ?? null, today)
@@ -45,26 +48,29 @@ function ReviewPage() {
                 key={opp.id}
                 to="/pipeline/$id"
                 params={{ id: opp.id }}
-                className="block rounded-xl bg-white p-4 shadow-sm transition hover:shadow-md"
+                className="card block px-4 py-4 transition hover:border-line-strong hover:bg-elevated"
               >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{opp.name}</h3>
-                    {opp.organisation && <p className="text-sm text-gray-500">{opp.organisation}</p>}
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="truncate text-sm font-medium text-zinc-100">{opp.name}</h3>
+                    {opp.organisation && (
+                      <p className="mt-0.5 truncate text-xs text-zinc-500">{opp.organisation}</p>
+                    )}
                   </div>
-                  <div className="flex gap-1">
-                    <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold capitalize text-blue-800">{opp.stage}</span>
-                  </div>
+                  <span className="chip bg-elevated capitalize text-zinc-400">{opp.stage}</span>
                 </div>
-                <div className="mt-2 flex flex-wrap gap-2">
+
+                <div className="mt-3 flex flex-wrap gap-1.5">
                   {missing && (
-                    <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
-                      No next action
-                    </span>
+                    <span className="chip bg-amber-500/12 text-amber-300">No next action</span>
                   )}
                   {stale && (
-                    <span className={`rounded px-2 py-0.5 text-xs font-semibold ${stale === 'red' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'}`}>
-                      Stale ({stale === 'red' ? '14+ days' : '7+ days'})
+                    <span
+                      className={`chip ${
+                        stale === 'red' ? 'bg-red-500/12 text-red-300' : 'bg-amber-500/12 text-amber-300'
+                      }`}
+                    >
+                      Stale · {stale === 'red' ? '14d+' : '7d+'}
                     </span>
                   )}
                 </div>
@@ -73,10 +79,6 @@ function ReviewPage() {
           })}
         </div>
       )}
-
-      <div className="text-xs text-gray-400">
-        {reviewItems.length} item{reviewItems.length !== 1 ? 's' : ''} to review
-      </div>
     </div>
   )
 }

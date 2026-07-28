@@ -8,8 +8,7 @@ import {
   fajrOnTimeStreak,
   getToday,
   isCycleComplete,
-} from '@mizan/shared'
-import type { DeenDay, PrayerStatus } from '@mizan/shared'
+} from '@nasr/shared'
 
 export const Route = createFileRoute('/deen/history')({
   component: HistoryPage,
@@ -35,83 +34,96 @@ function HistoryPage() {
   const dayMap = new Map(days.map((d) => [d.date, d]))
 
   if (settingsQuery.isLoading || deenQuery.isLoading) {
-    return <div className="py-20 text-center text-gray-400">Loading...</div>
+    return <p className="py-24 text-center text-sm text-zinc-600">Loading…</p>
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">40-Day History</h1>
+    <div className="space-y-10">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">History</h1>
+          <p className="mt-1 text-sm text-zinc-500">Adherence across the 40-day cycle.</p>
+        </div>
         {cycleDay !== null && (
-          <span className="rounded-full bg-primary-100 px-3 py-1 text-sm font-bold text-primary-800">
-            {cycleComplete ? 'Cycle Complete' : `Day ${cycleDay}/40`}
+          <span className="chip bg-primary-500/12 text-primary-300">
+            {cycleComplete ? 'Cycle complete' : `Day ${cycleDay} / 40`}
           </span>
         )}
+      </header>
+
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <Stat label="Overall" value={`${overall.percentage}%`} accent />
+        <Stat label="Fajr on time" value={`${adherence['fajr_ontime']?.percentage ?? 0}%`} />
+        <Stat label="Fajr streak" value={String(fajrStreak.current)} sub={`best ${fajrStreak.longest}`} />
+        <Stat label="Istighfar" value={`${adherence['istighfar']?.percentage ?? 0}%`} />
       </div>
 
-      {/* Summary stats */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Overall" value={`${overall.percentage}%`} />
-        <StatCard label="Fajr On-time" value={`${adherence['fajr_ontime']?.percentage ?? 0}%`} />
-        <StatCard label="Fajr Streak" value={`${fajrStreak.current}`} sub={`Best: ${fajrStreak.longest}`} />
-        <StatCard label="Istighfar" value={`${adherence['istighfar']?.percentage ?? 0}%`} />
-      </div>
-
-      {/* Adherence breakdown */}
-      <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Adherence Breakdown</h2>
-        <div className="space-y-2">
+      <section className="space-y-3">
+        <h2 className="label">Adherence Breakdown</h2>
+        <div className="card divide-y divide-line">
           {Object.entries(adherence)
             .filter(([k]) => k !== 'fajr_ontime')
             .map(([key, val]) => (
-              <div key={key} className="flex items-center gap-3">
-                <span className="w-28 text-sm capitalize text-gray-600">{key.replace(/_/g, ' ')}</span>
-                <div className="flex-1">
-                  <div className="h-2 overflow-hidden rounded-full bg-gray-200">
-                    <div className="h-full rounded-full bg-primary-500 transition-all" style={{ width: `${val.percentage}%` }} />
-                  </div>
+              <div key={key} className="flex items-center gap-4 px-4 py-3">
+                <span className="w-32 shrink-0 text-sm capitalize text-zinc-400">
+                  {key.replace(/_/g, ' ')}
+                </span>
+                <div className="h-1 flex-1 overflow-hidden rounded-full bg-elevated">
+                  <div
+                    className="h-full rounded-full bg-primary-500 transition-all duration-500"
+                    style={{ width: `${val.percentage}%` }}
+                  />
                 </div>
-                <span className="w-12 text-right text-sm font-semibold tabular-nums">{val.percentage}%</span>
+                <span className="w-10 shrink-0 text-right font-mono text-xs tabular-nums text-zinc-400">
+                  {val.percentage}%
+                </span>
               </div>
             ))}
         </div>
       </section>
 
-      {/* Calendar grid */}
       {calDates.length > 0 && (
-        <section>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Calendar</h2>
-          <div className="grid grid-cols-7 gap-1 sm:grid-cols-10">
-            {calDates.map((date, i) => {
-              const d = dayMap.get(date)
-              const dayNum = i + 1
-              const fajr = d?.fajr ?? null
-              const bg = date > today
-                ? 'bg-gray-50 text-gray-300'
-                : fajr === 'ontime'
-                  ? 'bg-green-100 text-green-800'
-                  : fajr === 'qada'
-                    ? 'bg-amber-100 text-amber-800'
-                    : fajr === 'missed'
-                      ? 'bg-red-100 text-red-800'
-                      : d
-                        ? 'bg-gray-100 text-gray-600'
-                        : 'bg-gray-50 text-gray-400'
-              return (
-                <div key={date} className={`flex h-10 w-full items-center justify-center rounded-lg text-xs font-semibold ${bg}`} title={date}>
-                  {dayNum}
-                </div>
-              )
-            })}
+        <section className="space-y-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <h2 className="label">Calendar</h2>
+            <Legend />
+          </div>
+          <div className="card p-3">
+            <div className="grid grid-cols-8 gap-1.5 sm:grid-cols-10">
+              {calDates.map((date, i) => {
+                const d = dayMap.get(date)
+                const fajr = d?.fajr ?? null
+                const tone = date > today
+                  ? 'bg-panel text-zinc-700 ring-1 ring-inset ring-line'
+                  : fajr === 'ontime'
+                    ? 'bg-emerald-500/15 text-emerald-300'
+                    : fajr === 'qada'
+                      ? 'bg-amber-500/15 text-amber-300'
+                      : fajr === 'missed'
+                        ? 'bg-red-500/15 text-red-300'
+                        : d
+                          ? 'bg-elevated text-zinc-400'
+                          : 'bg-panel text-zinc-700 ring-1 ring-inset ring-line'
+                return (
+                  <div
+                    key={date}
+                    title={`${date} — ${fajr ?? 'not logged'}`}
+                    className={`flex aspect-square items-center justify-center rounded-md font-mono text-[11px] font-medium tabular-nums ${tone}`}
+                  >
+                    {i + 1}
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </section>
       )}
 
       {cycleComplete && (
-        <div className="rounded-xl bg-green-50 p-6 text-center">
-          <h3 className="mb-2 text-lg font-bold text-green-800">Cycle Complete</h3>
-          <p className="mb-4 text-sm text-green-700">
-            Overall adherence: {overall.percentage}% over {cycleDays} days.
+        <div className="card border-emerald-500/25 bg-emerald-500/8 p-6 text-center">
+          <h3 className="text-base font-semibold text-emerald-200">Cycle complete</h3>
+          <p className="mt-1 text-sm text-emerald-300/70">
+            {overall.percentage}% overall adherence across {cycleDays} days.
           </p>
         </div>
       )}
@@ -119,12 +131,38 @@ function HistoryPage() {
   )
 }
 
-function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function Stat({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
   return (
-    <div className="rounded-xl bg-white p-4 shadow-sm">
-      <p className="text-xs font-medium text-gray-500">{label}</p>
-      <p className="text-2xl font-bold tabular-nums">{value}</p>
-      {sub && <p className="text-xs text-gray-400">{sub}</p>}
+    <div className="card p-4">
+      <p className="label">{label}</p>
+      <p
+        className={`mt-2 font-mono text-2xl font-semibold tabular-nums tracking-tight ${
+          accent ? 'text-primary-300' : 'text-zinc-100'
+        }`}
+      >
+        {value}
+      </p>
+      {sub && <p className="mt-0.5 font-mono text-[11px] text-zinc-600">{sub}</p>}
+    </div>
+  )
+}
+
+const legendItems = [
+  { tone: 'bg-emerald-500/40', label: 'On time' },
+  { tone: 'bg-amber-500/40', label: 'Qada' },
+  { tone: 'bg-red-500/40', label: 'Missed' },
+  { tone: 'bg-elevated', label: 'Logged' },
+]
+
+function Legend() {
+  return (
+    <div className="flex items-center gap-3">
+      {legendItems.map((item) => (
+        <span key={item.label} className="flex items-center gap-1.5 text-[11px] text-zinc-600">
+          <span className={`h-2 w-2 rounded-[3px] ${item.tone}`} />
+          {item.label}
+        </span>
+      ))}
     </div>
   )
 }

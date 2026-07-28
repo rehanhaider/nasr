@@ -1,4 +1,4 @@
-# Mizan
+# Nasr
 
 Self-hosted two-track progress tracker for Raspberry Pi. TypeScript end-to-end.
 
@@ -19,8 +19,8 @@ Designed for LAN use. Zero external network calls at runtime.
 ### Automated Install
 
 ```bash
-git clone <your-repo-url> /opt/mizan
-cd /opt/mizan
+git clone <your-repo-url> /opt/nasr
+cd /opt/nasr
 chmod +x install.sh
 ./install.sh
 ```
@@ -29,7 +29,7 @@ The installer:
 1. Installs Node.js 22 and pnpm if missing
 2. Installs dependencies
 3. Runs database migrations
-4. Prompts for your PIN (or reads `MIZAN_PIN` env var)
+4. Prompts for your PIN (or reads `NASR_PIN` env var)
 5. Builds the app
 6. Installs and enables systemd services
 
@@ -46,7 +46,7 @@ sudo apt-get install -y nodejs
 sudo npm install -g pnpm
 
 # Clone and install
-cd /opt/mizan
+cd /opt/nasr
 pnpm install
 
 # Run migrations
@@ -69,20 +69,20 @@ pnpm install
 pnpm build
 
 # Copy to Pi (exclude node_modules — reinstall on Pi for ARM64 native deps)
-rsync -avz --exclude node_modules --exclude .git ./ pi@<pi-ip>:/opt/mizan/
+rsync -avz --exclude node_modules --exclude .git ./ pi@<pi-ip>:/opt/nasr/
 
 # On the Pi
-cd /opt/mizan
+cd /opt/nasr
 pnpm install --frozen-lockfile
 pnpm db:migrate
 
 # Install systemd units
-sudo cp mizan.service /etc/systemd/system/
-sudo cp mizan-backup.service /etc/systemd/system/
-sudo cp mizan-backup.timer /etc/systemd/system/
+sudo cp nasr.service /etc/systemd/system/
+sudo cp nasr-backup.service /etc/systemd/system/
+sudo cp nasr-backup.timer /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now mizan.service
-sudo systemctl enable --now mizan-backup.timer
+sudo systemctl enable --now nasr.service
+sudo systemctl enable --now nasr-backup.timer
 ```
 
 **Important:** `better-sqlite3` has native bindings. If you build on x86_64 and deploy to ARM64, you must run `pnpm install` on the Pi to get the correct prebuilds.
@@ -147,11 +147,11 @@ curl -X POST http://<pi-ip>:8080/api/v1/auth/logout \
 Currently, update the PIN hash directly in SQLite:
 
 ```bash
-cd /opt/mizan
+cd /opt/nasr
 node -e "
   const Database = require('better-sqlite3');
   const crypto = require('crypto');
-  const db = new Database('./data/mizan.db');
+  const db = new Database('./data/nasr.db');
   const pin = process.argv[1];
   const salt = crypto.randomBytes(16).toString('hex');
   const hash = crypto.scryptSync(pin, salt, 64).toString('hex');
@@ -163,19 +163,44 @@ node -e "
 
 ## Backup & Restore
 
-The `mizan-backup.timer` runs nightly at 02:00, copying the SQLite file to `backups/` with 14-day retention.
+The `nasr-backup.timer` runs nightly at 02:00, copying the SQLite file to `backups/` with 14-day retention.
 
 **Manual backup:**
 ```bash
-cp /opt/mizan/data/mizan.db /path/to/backup/mizan-$(date +%Y%m%d).db
+cp /opt/nasr/data/nasr.db /path/to/backup/nasr-$(date +%Y%m%d).db
 ```
 
 **Restore:**
 ```bash
-sudo systemctl stop mizan
-cp /path/to/backup/mizan-YYYYMMDD.db /opt/mizan/data/mizan.db
-sudo systemctl start mizan
+sudo systemctl stop nasr
+cp /path/to/backup/nasr-YYYYMMDD.db /opt/nasr/data/nasr.db
+rm -f /opt/nasr/data/nasr.db-wal /opt/nasr/data/nasr.db-shm
+sudo systemctl start nasr
 ```
+
+The `-wal` and `-shm` files must go with it — leaving a stale write-ahead log
+next to a restored database will corrupt the restore.
+
+## Reset
+
+Clears every logged entry — deen days, opportunities, touches, observations,
+sadaqah, sessions — and keeps your PIN and settings. A consistent backup is
+written to `backups/pre-reset-<timestamp>.db` before anything is deleted, and
+the command prints the exact one-liner to undo itself.
+
+```bash
+cd /opt/nasr
+./scripts/reset.sh          # prompts: type RESET to confirm
+./scripts/reset.sh --yes    # no prompt
+```
+
+It stops the service, wipes, and restarts it — and restarts it even if it
+fails part-way. `NASR_INSTALL_DIR` overrides the install root (default
+`/opt/nasr`).
+
+There is deliberately no factory-reset flag. Deleting the database would clear
+`pin_hash`, and the login route treats a missing PIN as first-run setup: the
+next PIN typed at the login screen would silently become the new one.
 
 ## Export
 
@@ -184,7 +209,7 @@ Visit `/export` in the app or use the API:
 ```bash
 # Full JSON
 curl -H "Authorization: Bearer <token>" \
-  "http://<pi-ip>:8080/api/v1/export?format=json" -o mizan-export.json
+  "http://<pi-ip>:8080/api/v1/export?format=json" -o nasr-export.json
 
 # Deen CSV
 curl -H "Authorization: Bearer <token>" \
@@ -208,8 +233,8 @@ pnpm db:migrate   # Apply migrations
 
 ```bash
 pnpm test                         # All workspaces
-pnpm --filter @mizan/shared test  # Shared domain logic
-pnpm --filter @mizan/web test     # API-level tests
+pnpm --filter @nasr/shared test  # Shared domain logic
+pnpm --filter @nasr/web test     # API-level tests
 ```
 
 Tests cover:
@@ -222,7 +247,7 @@ Tests cover:
 ## Project Structure
 
 ```
-mizan/
+nasr/
 ├── packages/shared/       Pure TS domain logic + Zod schemas
 │   ├── src/schemas/       Zod validation schemas
 │   ├── src/domain/        Cycle, streaks, adherence, ghosted
@@ -233,8 +258,8 @@ mizan/
 │   ├── src/routes/        File-based routes (UI + API)
 │   ├── src/data/          Client query/mutation hooks
 │   └── migrations/        SQL migrations
-├── mizan.service          systemd unit
-├── mizan-backup.*         Backup service + timer
+├── nasr.service          systemd unit
+├── nasr-backup.*         Backup service + timer
 ├── install.sh             One-shot installer
 └── README.md
 ```

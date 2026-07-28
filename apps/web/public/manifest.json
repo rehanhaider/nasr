@@ -4,8 +4,8 @@
   "description": "Self-hosted progress tracker",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f9fafb",
-  "theme_color": "#1e3a8a",
+  "background_color": "#08080a",
+  "theme_color": "#08080a",
   "icons": [
     {
       "src": "/icon-192.png",
