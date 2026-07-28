@@ -9,7 +9,8 @@
     "start": "PORT=8080 HOST=0.0.0.0 node .output/server/index.mjs",
     "db:migrate": "tsx src/db/migrate.ts",
     "db:generate": "drizzle-kit generate",
-    "test": "vitest run"
+    "test": "vitest run",
+    "typecheck": "tsc"
   },
   "dependencies": {
     "@nasr/shared": "workspace:*",

@@ -4,6 +4,7 @@ import { useUpdateOpportunity, useDeleteOpportunity, useCreateTouch } from '../d
 import { useForm } from '@tanstack/react-form'
 import { touchCreateSchema, getToday } from '@nasr/shared'
 import type { OpportunityStatus, TouchChannel, TouchDirection } from '@nasr/shared'
+import { schemaValidator } from '../lib/form.js'
 import { useState } from 'react'
 
 export const Route = createFileRoute('/pipeline/$id')({
@@ -41,7 +42,7 @@ function OpportunityDetailPage() {
       written: true,
       note: '',
     },
-    validators: { onChange: touchCreateSchema },
+    validators: { onChange: schemaValidator(touchCreateSchema) },
     onSubmit: async ({ value }) => {
       createTouch.mutate({ ...value, note: value.note || null })
       touchForm.reset()

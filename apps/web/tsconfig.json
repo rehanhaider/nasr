@@ -2,12 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "paths": {
-      "~/*": ["./src/*"]
-    }
+    "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
-  "include": ["src/**/*", "app.config.ts", "drizzle.config.ts"]
+  "include": ["src/**/*", "tests/**/*", "vite.config.ts", "drizzle.config.ts"]
 }

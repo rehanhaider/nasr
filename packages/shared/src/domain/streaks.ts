@@ -5,13 +5,15 @@ export interface StreakResult {
   longest: number
 }
 
+type Prayer = 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha'
+
 /**
  * Compute current and longest streaks for a boolean predicate applied to
  * sorted (ascending by date) day records.
  */
-export function computeStreak(
-  days: Pick<DeenDay, 'date'>[],
-  predicate: (day: Pick<DeenDay, 'date'>) => boolean,
+export function computeStreak<TDay extends Pick<DeenDay, 'date'>>(
+  days: TDay[],
+  predicate: (day: TDay) => boolean,
   today: string,
 ): StreakResult {
   if (days.length === 0) return { current: 0, longest: 0 }
@@ -60,19 +62,19 @@ export function fajrOnTimeStreak(
   days: Pick<DeenDay, 'date' | 'fajr'>[],
   today: string,
 ): StreakResult {
-  return computeStreak(days, (d) => (d as { fajr: PrayerStatus }).fajr === 'ontime', today)
+  return computeStreak(days, (d) => d.fajr === 'ontime', today)
 }
 
 export function prayerStreak(
-  days: Pick<DeenDay, 'date'>[],
-  prayer: 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha',
+  days: Pick<DeenDay, 'date' | Prayer>[],
+  prayer: Prayer,
   statusFilter: PrayerStatus[],
   today: string,
 ): StreakResult {
   return computeStreak(
     days,
     (d) => {
-      const val = (d as Record<string, unknown>)[prayer] as PrayerStatus
+      const val = d[prayer]
       return val !== null && statusFilter.includes(val)
     },
     today,

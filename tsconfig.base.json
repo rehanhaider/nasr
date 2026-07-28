@@ -9,8 +9,9 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true
+    // Nothing here is built by tsc: apps/web is bundled by Vite/Nitro and
+    // @nasr/shared is consumed straight from source (see its package exports).
+    // tsc is only ever run as a type checker, so no emit options are set.
+    "noEmit": true
   }
 }
