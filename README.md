@@ -183,22 +183,35 @@ next to a restored database will corrupt the restore.
 
 ## Reset
 
+**Settings → Danger zone → Reset…**, then type `RESET` to confirm.
+
 Clears every logged entry — deen days, opportunities, touches, observations,
-sadaqah, sessions — and keeps your PIN and settings. A consistent backup is
-written to `backups/pre-reset-<timestamp>.db` before anything is deleted, and
-the command prints the exact one-liner to undo itself.
+sadaqah — and keeps your PIN and settings. Other sessions are revoked; the one
+you reset from is kept, so you stay logged in.
+
+A consistent backup (`VACUUM INTO`, so anything still in the `-wal` is
+included) is written to `backups/pre-reset-<timestamp>.db` before a single row
+is deleted, and the app shows you the path. Undoing a reset is a restore, and
+that needs shell access:
 
 ```bash
-cd /opt/nasr
-./scripts/reset.sh          # prompts: type RESET to confirm
-./scripts/reset.sh --yes    # no prompt
+sudo systemctl stop nasr
+cp /opt/nasr/backups/pre-reset-<timestamp>.db /opt/nasr/data/nasr.db
+rm -f /opt/nasr/data/nasr.db-wal /opt/nasr/data/nasr.db-shm
+sudo systemctl start nasr
 ```
 
-It stops the service, wipes, and restarts it — and restarts it even if it
-fails part-way. `NASR_INSTALL_DIR` overrides the install root (default
-`/opt/nasr`).
+The same thing over the API:
 
-There is deliberately no factory-reset flag. Deleting the database would clear
+```bash
+curl -X POST -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" -d '{"confirm":"RESET"}' \
+  http://<pi-ip>:8080/api/v1/settings/reset
+```
+
+The `confirm` field is required — a stray POST cannot wipe the database.
+
+There is deliberately no factory reset. Deleting the database would clear
 `pin_hash`, and the login route treats a missing PIN as first-run setup: the
 next PIN typed at the login screen would silently become the new one.
 

@@ -6,6 +6,7 @@ import type {
   Opportunity,
   OpportunityCreate,
   OpportunityUpdate,
+  ResetResponse,
   SadaqahCreate,
   Settings,
   SettingsUpdate,
@@ -115,6 +116,18 @@ export function useUpdateSettings() {
       qc.invalidateQueries({ queryKey: queryKeys.settings })
       // The cycle window is derived from cycle_start_date/timezone.
       qc.invalidateQueries({ queryKey: queryKeys.deen.days })
+    },
+  })
+}
+
+export function useResetData() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => apiPost<ResetResponse>('/settings/reset', { confirm: 'RESET' }),
+    onSuccess: () => {
+      // Every list the app renders came out of the tables that were just
+      // cleared, so nothing cached survives this.
+      qc.invalidateQueries()
     },
   })
 }

@@ -22,6 +22,7 @@ import { Route as DeenObservationsRouteImport } from './routes/deen.observations
 import { Route as DeenHistoryRouteImport } from './routes/deen.history'
 import { Route as ApiV1SettingsRouteImport } from './routes/api.v1.settings'
 import { Route as ApiV1ExportRouteImport } from './routes/api.v1.export'
+import { Route as ApiV1SettingsResetRouteImport } from './routes/api.v1.settings.reset'
 import { Route as ApiV1PipelineTouchesRouteImport } from './routes/api.v1.pipeline.touches'
 import { Route as ApiV1PipelineOpportunitiesRouteImport } from './routes/api.v1.pipeline.opportunities'
 import { Route as ApiV1DeenSadaqahRouteImport } from './routes/api.v1.deen.sadaqah'
@@ -98,6 +99,11 @@ const ApiV1ExportRoute = ApiV1ExportRouteImport.update({
   path: '/api/v1/export',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1SettingsResetRoute = ApiV1SettingsResetRouteImport.update({
+  id: '/reset',
+  path: '/reset',
+  getParentRoute: () => ApiV1SettingsRoute,
+} as any)
 const ApiV1PipelineTouchesRoute = ApiV1PipelineTouchesRouteImport.update({
   id: '/api/v1/pipeline/touches',
   path: '/api/v1/pipeline/touches',
@@ -164,7 +170,7 @@ export interface FileRoutesByFullPath {
   '/pipeline/new': typeof PipelineNewRoute
   '/pipeline/': typeof PipelineIndexRoute
   '/api/v1/export': typeof ApiV1ExportRoute
-  '/api/v1/settings': typeof ApiV1SettingsRoute
+  '/api/v1/settings': typeof ApiV1SettingsRouteWithChildren
   '/api/v1/auth/login': typeof ApiV1AuthLoginRoute
   '/api/v1/auth/logout': typeof ApiV1AuthLogoutRoute
   '/api/v1/auth/status': typeof ApiV1AuthStatusRoute
@@ -173,6 +179,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/deen/sadaqah': typeof ApiV1DeenSadaqahRoute
   '/api/v1/pipeline/opportunities': typeof ApiV1PipelineOpportunitiesRoute
   '/api/v1/pipeline/touches': typeof ApiV1PipelineTouchesRoute
+  '/api/v1/settings/reset': typeof ApiV1SettingsResetRoute
   '/api/v1/deen/day/$date': typeof ApiV1DeenDayDateRoute
   '/api/v1/pipeline/opportunity/$id': typeof ApiV1PipelineOpportunityIdRoute
 }
@@ -188,7 +195,7 @@ export interface FileRoutesByTo {
   '/pipeline/new': typeof PipelineNewRoute
   '/pipeline': typeof PipelineIndexRoute
   '/api/v1/export': typeof ApiV1ExportRoute
-  '/api/v1/settings': typeof ApiV1SettingsRoute
+  '/api/v1/settings': typeof ApiV1SettingsRouteWithChildren
   '/api/v1/auth/login': typeof ApiV1AuthLoginRoute
   '/api/v1/auth/logout': typeof ApiV1AuthLogoutRoute
   '/api/v1/auth/status': typeof ApiV1AuthStatusRoute
@@ -197,6 +204,7 @@ export interface FileRoutesByTo {
   '/api/v1/deen/sadaqah': typeof ApiV1DeenSadaqahRoute
   '/api/v1/pipeline/opportunities': typeof ApiV1PipelineOpportunitiesRoute
   '/api/v1/pipeline/touches': typeof ApiV1PipelineTouchesRoute
+  '/api/v1/settings/reset': typeof ApiV1SettingsResetRoute
   '/api/v1/deen/day/$date': typeof ApiV1DeenDayDateRoute
   '/api/v1/pipeline/opportunity/$id': typeof ApiV1PipelineOpportunityIdRoute
 }
@@ -214,7 +222,7 @@ export interface FileRoutesById {
   '/pipeline/new': typeof PipelineNewRoute
   '/pipeline/': typeof PipelineIndexRoute
   '/api/v1/export': typeof ApiV1ExportRoute
-  '/api/v1/settings': typeof ApiV1SettingsRoute
+  '/api/v1/settings': typeof ApiV1SettingsRouteWithChildren
   '/api/v1/auth/login': typeof ApiV1AuthLoginRoute
   '/api/v1/auth/logout': typeof ApiV1AuthLogoutRoute
   '/api/v1/auth/status': typeof ApiV1AuthStatusRoute
@@ -223,6 +231,7 @@ export interface FileRoutesById {
   '/api/v1/deen/sadaqah': typeof ApiV1DeenSadaqahRoute
   '/api/v1/pipeline/opportunities': typeof ApiV1PipelineOpportunitiesRoute
   '/api/v1/pipeline/touches': typeof ApiV1PipelineTouchesRoute
+  '/api/v1/settings/reset': typeof ApiV1SettingsResetRoute
   '/api/v1/deen/day/$date': typeof ApiV1DeenDayDateRoute
   '/api/v1/pipeline/opportunity/$id': typeof ApiV1PipelineOpportunityIdRoute
 }
@@ -250,6 +259,7 @@ export interface FileRouteTypes {
     | '/api/v1/deen/sadaqah'
     | '/api/v1/pipeline/opportunities'
     | '/api/v1/pipeline/touches'
+    | '/api/v1/settings/reset'
     | '/api/v1/deen/day/$date'
     | '/api/v1/pipeline/opportunity/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -274,6 +284,7 @@ export interface FileRouteTypes {
     | '/api/v1/deen/sadaqah'
     | '/api/v1/pipeline/opportunities'
     | '/api/v1/pipeline/touches'
+    | '/api/v1/settings/reset'
     | '/api/v1/deen/day/$date'
     | '/api/v1/pipeline/opportunity/$id'
   id:
@@ -299,6 +310,7 @@ export interface FileRouteTypes {
     | '/api/v1/deen/sadaqah'
     | '/api/v1/pipeline/opportunities'
     | '/api/v1/pipeline/touches'
+    | '/api/v1/settings/reset'
     | '/api/v1/deen/day/$date'
     | '/api/v1/pipeline/opportunity/$id'
   fileRoutesById: FileRoutesById
@@ -313,7 +325,7 @@ export interface RootRouteChildren {
   DeenHistoryRoute: typeof DeenHistoryRoute
   DeenObservationsRoute: typeof DeenObservationsRoute
   ApiV1ExportRoute: typeof ApiV1ExportRoute
-  ApiV1SettingsRoute: typeof ApiV1SettingsRoute
+  ApiV1SettingsRoute: typeof ApiV1SettingsRouteWithChildren
   ApiV1AuthLoginRoute: typeof ApiV1AuthLoginRoute
   ApiV1AuthLogoutRoute: typeof ApiV1AuthLogoutRoute
   ApiV1AuthStatusRoute: typeof ApiV1AuthStatusRoute
@@ -419,6 +431,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1ExportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/settings/reset': {
+      id: '/api/v1/settings/reset'
+      path: '/reset'
+      fullPath: '/api/v1/settings/reset'
+      preLoaderRoute: typeof ApiV1SettingsResetRouteImport
+      parentRoute: typeof ApiV1SettingsRoute
+    }
     '/api/v1/pipeline/touches': {
       id: '/api/v1/pipeline/touches'
       path: '/api/v1/pipeline/touches'
@@ -508,6 +527,18 @@ const PipelineRouteWithChildren = PipelineRoute._addFileChildren(
   PipelineRouteChildren,
 )
 
+interface ApiV1SettingsRouteChildren {
+  ApiV1SettingsResetRoute: typeof ApiV1SettingsResetRoute
+}
+
+const ApiV1SettingsRouteChildren: ApiV1SettingsRouteChildren = {
+  ApiV1SettingsResetRoute: ApiV1SettingsResetRoute,
+}
+
+const ApiV1SettingsRouteWithChildren = ApiV1SettingsRoute._addFileChildren(
+  ApiV1SettingsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ExportRoute: ExportRoute,
@@ -518,7 +549,7 @@ const rootRouteChildren: RootRouteChildren = {
   DeenHistoryRoute: DeenHistoryRoute,
   DeenObservationsRoute: DeenObservationsRoute,
   ApiV1ExportRoute: ApiV1ExportRoute,
-  ApiV1SettingsRoute: ApiV1SettingsRoute,
+  ApiV1SettingsRoute: ApiV1SettingsRouteWithChildren,
   ApiV1AuthLoginRoute: ApiV1AuthLoginRoute,
   ApiV1AuthLogoutRoute: ApiV1AuthLogoutRoute,
   ApiV1AuthStatusRoute: ApiV1AuthStatusRoute,

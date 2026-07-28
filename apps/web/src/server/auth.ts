@@ -27,7 +27,7 @@ export function verifyPin(pin: string, stored: string): boolean {
   return timingSafeEqual(hashBuffer, testHash)
 }
 
-function hashToken(token: string): string {
+export function hashToken(token: string): string {
   return createHash('sha256').update(token).digest('hex')
 }
 
