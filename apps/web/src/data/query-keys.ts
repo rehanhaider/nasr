@@ -10,10 +10,4 @@ export const queryKeys = {
     observations: ['deen', 'observations'] as const,
     content: ['deen', 'content'] as const,
   },
-  pipeline: {
-    all: ['pipeline'] as const,
-    opportunities: ['pipeline', 'opportunities'] as const,
-    opportunity: (id: string) => ['pipeline', 'opportunity', id] as const,
-    touches: (opportunityId: string) => ['pipeline', 'touches', opportunityId] as const,
-  },
 }

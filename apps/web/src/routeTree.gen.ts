@@ -10,21 +10,14 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as ReviewRouteImport } from './routes/review'
-import { Route as PipelineRouteImport } from './routes/pipeline'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ExportRouteImport } from './routes/export'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as PipelineIndexRouteImport } from './routes/pipeline.index'
-import { Route as PipelineNewRouteImport } from './routes/pipeline.new'
-import { Route as PipelineIdRouteImport } from './routes/pipeline.$id'
 import { Route as DeenObservationsRouteImport } from './routes/deen.observations'
 import { Route as DeenHistoryRouteImport } from './routes/deen.history'
 import { Route as ApiV1SettingsRouteImport } from './routes/api.v1.settings'
 import { Route as ApiV1ExportRouteImport } from './routes/api.v1.export'
 import { Route as ApiV1SettingsResetRouteImport } from './routes/api.v1.settings.reset'
-import { Route as ApiV1PipelineTouchesRouteImport } from './routes/api.v1.pipeline.touches'
-import { Route as ApiV1PipelineOpportunitiesRouteImport } from './routes/api.v1.pipeline.opportunities'
 import { Route as ApiV1DeenSadaqahRouteImport } from './routes/api.v1.deen.sadaqah'
 import { Route as ApiV1DeenObservationsRouteImport } from './routes/api.v1.deen.observations'
 import { Route as ApiV1DeenDaysRouteImport } from './routes/api.v1.deen.days'
@@ -32,22 +25,11 @@ import { Route as ApiV1DeenContentRouteImport } from './routes/api.v1.deen.conte
 import { Route as ApiV1AuthStatusRouteImport } from './routes/api.v1.auth.status'
 import { Route as ApiV1AuthLogoutRouteImport } from './routes/api.v1.auth.logout'
 import { Route as ApiV1AuthLoginRouteImport } from './routes/api.v1.auth.login'
-import { Route as ApiV1PipelineOpportunityIdRouteImport } from './routes/api.v1.pipeline.opportunity.$id'
 import { Route as ApiV1DeenDayDateRouteImport } from './routes/api.v1.deen.day.$date'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReviewRoute = ReviewRouteImport.update({
-  id: '/review',
-  path: '/review',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PipelineRoute = PipelineRouteImport.update({
-  id: '/pipeline',
-  path: '/pipeline',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -64,21 +46,6 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any)
-const PipelineIndexRoute = PipelineIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => PipelineRoute,
-} as any)
-const PipelineNewRoute = PipelineNewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => PipelineRoute,
-} as any)
-const PipelineIdRoute = PipelineIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => PipelineRoute,
 } as any)
 const DeenObservationsRoute = DeenObservationsRouteImport.update({
   id: '/deen/observations',
@@ -105,17 +72,6 @@ const ApiV1SettingsResetRoute = ApiV1SettingsResetRouteImport.update({
   path: '/reset',
   getParentRoute: () => ApiV1SettingsRoute,
 } as any)
-const ApiV1PipelineTouchesRoute = ApiV1PipelineTouchesRouteImport.update({
-  id: '/api/v1/pipeline/touches',
-  path: '/api/v1/pipeline/touches',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiV1PipelineOpportunitiesRoute =
-  ApiV1PipelineOpportunitiesRouteImport.update({
-    id: '/api/v1/pipeline/opportunities',
-    path: '/api/v1/pipeline/opportunities',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiV1DeenSadaqahRoute = ApiV1DeenSadaqahRouteImport.update({
   id: '/api/v1/deen/sadaqah',
   path: '/api/v1/deen/sadaqah',
@@ -151,12 +107,6 @@ const ApiV1AuthLoginRoute = ApiV1AuthLoginRouteImport.update({
   path: '/api/v1/auth/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1PipelineOpportunityIdRoute =
-  ApiV1PipelineOpportunityIdRouteImport.update({
-    id: '/api/v1/pipeline/opportunity/$id',
-    path: '/api/v1/pipeline/opportunity/$id',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiV1DeenDayDateRoute = ApiV1DeenDayDateRouteImport.update({
   id: '/api/v1/deen/day/$date',
   path: '/api/v1/deen/day/$date',
@@ -167,14 +117,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/export': typeof ExportRoute
   '/login': typeof LoginRoute
-  '/pipeline': typeof PipelineRouteWithChildren
-  '/review': typeof ReviewRoute
   '/settings': typeof SettingsRoute
   '/deen/history': typeof DeenHistoryRoute
   '/deen/observations': typeof DeenObservationsRoute
-  '/pipeline/$id': typeof PipelineIdRoute
-  '/pipeline/new': typeof PipelineNewRoute
-  '/pipeline/': typeof PipelineIndexRoute
   '/api/v1/export': typeof ApiV1ExportRoute
   '/api/v1/settings': typeof ApiV1SettingsRouteWithChildren
   '/api/v1/auth/login': typeof ApiV1AuthLoginRoute
@@ -184,23 +129,16 @@ export interface FileRoutesByFullPath {
   '/api/v1/deen/days': typeof ApiV1DeenDaysRoute
   '/api/v1/deen/observations': typeof ApiV1DeenObservationsRoute
   '/api/v1/deen/sadaqah': typeof ApiV1DeenSadaqahRoute
-  '/api/v1/pipeline/opportunities': typeof ApiV1PipelineOpportunitiesRoute
-  '/api/v1/pipeline/touches': typeof ApiV1PipelineTouchesRoute
   '/api/v1/settings/reset': typeof ApiV1SettingsResetRoute
   '/api/v1/deen/day/$date': typeof ApiV1DeenDayDateRoute
-  '/api/v1/pipeline/opportunity/$id': typeof ApiV1PipelineOpportunityIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/export': typeof ExportRoute
   '/login': typeof LoginRoute
-  '/review': typeof ReviewRoute
   '/settings': typeof SettingsRoute
   '/deen/history': typeof DeenHistoryRoute
   '/deen/observations': typeof DeenObservationsRoute
-  '/pipeline/$id': typeof PipelineIdRoute
-  '/pipeline/new': typeof PipelineNewRoute
-  '/pipeline': typeof PipelineIndexRoute
   '/api/v1/export': typeof ApiV1ExportRoute
   '/api/v1/settings': typeof ApiV1SettingsRouteWithChildren
   '/api/v1/auth/login': typeof ApiV1AuthLoginRoute
@@ -210,25 +148,17 @@ export interface FileRoutesByTo {
   '/api/v1/deen/days': typeof ApiV1DeenDaysRoute
   '/api/v1/deen/observations': typeof ApiV1DeenObservationsRoute
   '/api/v1/deen/sadaqah': typeof ApiV1DeenSadaqahRoute
-  '/api/v1/pipeline/opportunities': typeof ApiV1PipelineOpportunitiesRoute
-  '/api/v1/pipeline/touches': typeof ApiV1PipelineTouchesRoute
   '/api/v1/settings/reset': typeof ApiV1SettingsResetRoute
   '/api/v1/deen/day/$date': typeof ApiV1DeenDayDateRoute
-  '/api/v1/pipeline/opportunity/$id': typeof ApiV1PipelineOpportunityIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/export': typeof ExportRoute
   '/login': typeof LoginRoute
-  '/pipeline': typeof PipelineRouteWithChildren
-  '/review': typeof ReviewRoute
   '/settings': typeof SettingsRoute
   '/deen/history': typeof DeenHistoryRoute
   '/deen/observations': typeof DeenObservationsRoute
-  '/pipeline/$id': typeof PipelineIdRoute
-  '/pipeline/new': typeof PipelineNewRoute
-  '/pipeline/': typeof PipelineIndexRoute
   '/api/v1/export': typeof ApiV1ExportRoute
   '/api/v1/settings': typeof ApiV1SettingsRouteWithChildren
   '/api/v1/auth/login': typeof ApiV1AuthLoginRoute
@@ -238,11 +168,8 @@ export interface FileRoutesById {
   '/api/v1/deen/days': typeof ApiV1DeenDaysRoute
   '/api/v1/deen/observations': typeof ApiV1DeenObservationsRoute
   '/api/v1/deen/sadaqah': typeof ApiV1DeenSadaqahRoute
-  '/api/v1/pipeline/opportunities': typeof ApiV1PipelineOpportunitiesRoute
-  '/api/v1/pipeline/touches': typeof ApiV1PipelineTouchesRoute
   '/api/v1/settings/reset': typeof ApiV1SettingsResetRoute
   '/api/v1/deen/day/$date': typeof ApiV1DeenDayDateRoute
-  '/api/v1/pipeline/opportunity/$id': typeof ApiV1PipelineOpportunityIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -250,14 +177,9 @@ export interface FileRouteTypes {
     | '/'
     | '/export'
     | '/login'
-    | '/pipeline'
-    | '/review'
     | '/settings'
     | '/deen/history'
     | '/deen/observations'
-    | '/pipeline/$id'
-    | '/pipeline/new'
-    | '/pipeline/'
     | '/api/v1/export'
     | '/api/v1/settings'
     | '/api/v1/auth/login'
@@ -267,23 +189,16 @@ export interface FileRouteTypes {
     | '/api/v1/deen/days'
     | '/api/v1/deen/observations'
     | '/api/v1/deen/sadaqah'
-    | '/api/v1/pipeline/opportunities'
-    | '/api/v1/pipeline/touches'
     | '/api/v1/settings/reset'
     | '/api/v1/deen/day/$date'
-    | '/api/v1/pipeline/opportunity/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/export'
     | '/login'
-    | '/review'
     | '/settings'
     | '/deen/history'
     | '/deen/observations'
-    | '/pipeline/$id'
-    | '/pipeline/new'
-    | '/pipeline'
     | '/api/v1/export'
     | '/api/v1/settings'
     | '/api/v1/auth/login'
@@ -293,24 +208,16 @@ export interface FileRouteTypes {
     | '/api/v1/deen/days'
     | '/api/v1/deen/observations'
     | '/api/v1/deen/sadaqah'
-    | '/api/v1/pipeline/opportunities'
-    | '/api/v1/pipeline/touches'
     | '/api/v1/settings/reset'
     | '/api/v1/deen/day/$date'
-    | '/api/v1/pipeline/opportunity/$id'
   id:
     | '__root__'
     | '/'
     | '/export'
     | '/login'
-    | '/pipeline'
-    | '/review'
     | '/settings'
     | '/deen/history'
     | '/deen/observations'
-    | '/pipeline/$id'
-    | '/pipeline/new'
-    | '/pipeline/'
     | '/api/v1/export'
     | '/api/v1/settings'
     | '/api/v1/auth/login'
@@ -320,19 +227,14 @@ export interface FileRouteTypes {
     | '/api/v1/deen/days'
     | '/api/v1/deen/observations'
     | '/api/v1/deen/sadaqah'
-    | '/api/v1/pipeline/opportunities'
-    | '/api/v1/pipeline/touches'
     | '/api/v1/settings/reset'
     | '/api/v1/deen/day/$date'
-    | '/api/v1/pipeline/opportunity/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ExportRoute: typeof ExportRoute
   LoginRoute: typeof LoginRoute
-  PipelineRoute: typeof PipelineRouteWithChildren
-  ReviewRoute: typeof ReviewRoute
   SettingsRoute: typeof SettingsRoute
   DeenHistoryRoute: typeof DeenHistoryRoute
   DeenObservationsRoute: typeof DeenObservationsRoute
@@ -345,10 +247,7 @@ export interface RootRouteChildren {
   ApiV1DeenDaysRoute: typeof ApiV1DeenDaysRoute
   ApiV1DeenObservationsRoute: typeof ApiV1DeenObservationsRoute
   ApiV1DeenSadaqahRoute: typeof ApiV1DeenSadaqahRoute
-  ApiV1PipelineOpportunitiesRoute: typeof ApiV1PipelineOpportunitiesRoute
-  ApiV1PipelineTouchesRoute: typeof ApiV1PipelineTouchesRoute
   ApiV1DeenDayDateRoute: typeof ApiV1DeenDayDateRoute
-  ApiV1PipelineOpportunityIdRoute: typeof ApiV1PipelineOpportunityIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -358,20 +257,6 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/review': {
-      id: '/review'
-      path: '/review'
-      fullPath: '/review'
-      preLoaderRoute: typeof ReviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pipeline': {
-      id: '/pipeline'
-      path: '/pipeline'
-      fullPath: '/pipeline'
-      preLoaderRoute: typeof PipelineRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -394,27 +279,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/pipeline/': {
-      id: '/pipeline/'
-      path: '/'
-      fullPath: '/pipeline/'
-      preLoaderRoute: typeof PipelineIndexRouteImport
-      parentRoute: typeof PipelineRoute
-    }
-    '/pipeline/new': {
-      id: '/pipeline/new'
-      path: '/new'
-      fullPath: '/pipeline/new'
-      preLoaderRoute: typeof PipelineNewRouteImport
-      parentRoute: typeof PipelineRoute
-    }
-    '/pipeline/$id': {
-      id: '/pipeline/$id'
-      path: '/$id'
-      fullPath: '/pipeline/$id'
-      preLoaderRoute: typeof PipelineIdRouteImport
-      parentRoute: typeof PipelineRoute
     }
     '/deen/observations': {
       id: '/deen/observations'
@@ -450,20 +314,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/v1/settings/reset'
       preLoaderRoute: typeof ApiV1SettingsResetRouteImport
       parentRoute: typeof ApiV1SettingsRoute
-    }
-    '/api/v1/pipeline/touches': {
-      id: '/api/v1/pipeline/touches'
-      path: '/api/v1/pipeline/touches'
-      fullPath: '/api/v1/pipeline/touches'
-      preLoaderRoute: typeof ApiV1PipelineTouchesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/v1/pipeline/opportunities': {
-      id: '/api/v1/pipeline/opportunities'
-      path: '/api/v1/pipeline/opportunities'
-      fullPath: '/api/v1/pipeline/opportunities'
-      preLoaderRoute: typeof ApiV1PipelineOpportunitiesRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/api/v1/deen/sadaqah': {
       id: '/api/v1/deen/sadaqah'
@@ -514,13 +364,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1AuthLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/pipeline/opportunity/$id': {
-      id: '/api/v1/pipeline/opportunity/$id'
-      path: '/api/v1/pipeline/opportunity/$id'
-      fullPath: '/api/v1/pipeline/opportunity/$id'
-      preLoaderRoute: typeof ApiV1PipelineOpportunityIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/v1/deen/day/$date': {
       id: '/api/v1/deen/day/$date'
       path: '/api/v1/deen/day/$date'
@@ -530,22 +373,6 @@ declare module '@tanstack/react-router' {
     }
   }
 }
-
-interface PipelineRouteChildren {
-  PipelineIdRoute: typeof PipelineIdRoute
-  PipelineNewRoute: typeof PipelineNewRoute
-  PipelineIndexRoute: typeof PipelineIndexRoute
-}
-
-const PipelineRouteChildren: PipelineRouteChildren = {
-  PipelineIdRoute: PipelineIdRoute,
-  PipelineNewRoute: PipelineNewRoute,
-  PipelineIndexRoute: PipelineIndexRoute,
-}
-
-const PipelineRouteWithChildren = PipelineRoute._addFileChildren(
-  PipelineRouteChildren,
-)
 
 interface ApiV1SettingsRouteChildren {
   ApiV1SettingsResetRoute: typeof ApiV1SettingsResetRoute
@@ -563,8 +390,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ExportRoute: ExportRoute,
   LoginRoute: LoginRoute,
-  PipelineRoute: PipelineRouteWithChildren,
-  ReviewRoute: ReviewRoute,
   SettingsRoute: SettingsRoute,
   DeenHistoryRoute: DeenHistoryRoute,
   DeenObservationsRoute: DeenObservationsRoute,
@@ -577,10 +402,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1DeenDaysRoute: ApiV1DeenDaysRoute,
   ApiV1DeenObservationsRoute: ApiV1DeenObservationsRoute,
   ApiV1DeenSadaqahRoute: ApiV1DeenSadaqahRoute,
-  ApiV1PipelineOpportunitiesRoute: ApiV1PipelineOpportunitiesRoute,
-  ApiV1PipelineTouchesRoute: ApiV1PipelineTouchesRoute,
   ApiV1DeenDayDateRoute: ApiV1DeenDayDateRoute,
-  ApiV1PipelineOpportunityIdRoute: ApiV1PipelineOpportunityIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

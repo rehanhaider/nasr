@@ -1,12 +1,11 @@
-import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
-import { useDeenContent, useDeenDays, useDeenDay, useSettings, useOpportunities, useAuthStatus } from '../data/queries.js'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useDeenContent, useDeenDays, useDeenDay, useSettings, useAuthStatus } from '../data/queries.js'
 import { useUpdateDeenDay } from '../data/mutations.js'
 import {
   getCycleDay,
   isCycleComplete,
   fajrOnTimeStreak,
   getToday,
-  isMissingNextAction,
   DEEN_GUIDES,
 } from '@nasr/shared'
 import type { DeenContent, DeenContentItemKey, DeenDay, PrayerStatus } from '@nasr/shared'
@@ -56,7 +55,6 @@ function TodayPage() {
   const dayQuery = useDeenDay(selectedDate)
   const updateDay = useUpdateDeenDay()
   const contentQuery = useDeenContent()
-  const oppsQuery = useOpportunities()
 
   if (authQuery.isLoading || settingsQuery.isLoading) {
     return <p className="py-24 text-center text-sm text-zinc-600">Loading…</p>
@@ -67,10 +65,6 @@ function TodayPage() {
   const allDays = deenDaysQuery.data?.days ?? []
   const fajrStreak = fajrOnTimeStreak(allDays, selectedDate)
   const day = dayQuery.data
-
-  const opportunities = oppsQuery.data ?? []
-  const openOpps = opportunities.filter((o) => o.status === 'open')
-  const needsAction = openOpps.filter((o) => isMissingNextAction(o))
 
   const prayers: Array<{ key: keyof Pick<DeenDay, 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha'>; label: string }> = [
     { key: 'fajr', label: 'Fajr' },
@@ -221,24 +215,7 @@ function TodayPage() {
         />
       </section>
 
-      {needsAction.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="label">Pipeline Alerts</h2>
-          <div className="card divide-y divide-line overflow-hidden">
-            {needsAction.slice(0, 3).map((o) => (
-              <Link
-                key={o.id}
-                to="/pipeline/$id"
-                params={{ id: o.id }}
-                className="flex items-center justify-between gap-3 px-4 py-3 transition hover:bg-elevated"
-              >
-                <span className="truncate text-sm font-medium text-zinc-200">{o.name}</span>
-                <span className="chip shrink-0 bg-amber-500/12 text-amber-300">No next action</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+
     </div>
   )
 }

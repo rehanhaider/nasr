@@ -5,10 +5,8 @@ export const Route = createFileRoute('/export')({
 })
 
 function ExportPage() {
-  function download(format: string, module?: string) {
-    const params = new URLSearchParams({ format })
-    if (module) params.set('module', module)
-    window.open(`/api/v1/export?${params}`, '_blank')
+  function download(format: string) {
+    window.open(`/api/v1/export?${new URLSearchParams({ format })}`, '_blank')
   }
 
   return (
@@ -34,13 +32,7 @@ function ExportPage() {
           label="Daily practices"
           description="Salah, adhkar and istighfar records"
           badge="csv"
-          onClick={() => download('csv', 'deen')}
-        />
-        <ExportRow
-          label="Pipeline"
-          description="Opportunities and their details"
-          badge="csv"
-          onClick={() => download('csv', 'pipeline')}
+          onClick={() => download('csv')}
         />
       </div>
     </div>

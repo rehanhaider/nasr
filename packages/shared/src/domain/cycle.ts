@@ -1,5 +1,5 @@
 /**
- * Cycle-day arithmetic for the 40-day and 90-day modules.
+ * Cycle-day arithmetic for the 40-day module.
  * Pure functions — no Node or React dependencies.
  */
 
@@ -28,21 +28,6 @@ export function getCycleDay(
 export function isCycleComplete(cycleDay: number | null): boolean {
   if (cycleDay === null) return false
   return cycleDay > 40
-}
-
-export function getPipelineDay(
-  pipelineStartDate: string | null,
-  today: string,
-): number | null {
-  if (!pipelineStartDate) return null
-  const diff = daysBetween(pipelineStartDate, today)
-  if (diff < 0) return null
-  return diff + 1
-}
-
-export function isPipelineWindowComplete(pipelineDay: number | null): boolean {
-  if (pipelineDay === null) return false
-  return pipelineDay > 90
 }
 
 export function datesInRange(startDate: string, endDate: string): string[] {

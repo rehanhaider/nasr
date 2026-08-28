@@ -6,9 +6,7 @@ import type { Settings, SettingsUpdate } from '@nasr/shared'
 const SETTING_KEYS = [
   'timezone',
   'cycle_start_date',
-  'pipeline_start_date',
   'istighfar_target',
-  'live_target',
 ] as const
 
 export function getSettings(): Settings {
@@ -18,9 +16,7 @@ export function getSettings(): Settings {
   return {
     timezone: map.get('timezone') ?? 'Asia/Kolkata',
     cycle_start_date: map.get('cycle_start_date') ?? null,
-    pipeline_start_date: map.get('pipeline_start_date') ?? null,
     istighfar_target: parseInt(map.get('istighfar_target') ?? '100', 10),
-    live_target: parseInt(map.get('live_target') ?? '10', 10),
   }
 }
 

@@ -41,8 +41,7 @@ afterAll(() => {
 })
 
 function seed() {
-  sqlite.exec('DELETE FROM touches; DELETE FROM opportunities; DELETE FROM observations')
-  sqlite.exec('DELETE FROM deen_days; DELETE FROM sadaqah_log; DELETE FROM sessions; DELETE FROM settings')
+  sqlite.exec('DELETE FROM observations; DELETE FROM deen_days; DELETE FROM sadaqah_log; DELETE FROM sessions; DELETE FROM settings')
 
   sqlite
     .prepare('INSERT INTO settings (key, value) VALUES (?, ?)')
@@ -55,14 +54,6 @@ function seed() {
 
   sqlite.prepare('INSERT INTO deen_days (date) VALUES (?)').run('2026-07-01')
   sqlite.prepare('INSERT INTO deen_days (date) VALUES (?)').run('2026-07-02')
-  sqlite
-    .prepare('INSERT INTO opportunities (id, name, type, stage, status, opened_date) VALUES (?, ?, ?, ?, ?, ?)')
-    .run('opp-1', 'Acme', 'job', 'lead', 'open', '2026-07-01')
-  sqlite
-    .prepare(
-      'INSERT INTO touches (id, opportunity_id, date, direction, channel, written) VALUES (?, ?, ?, ?, ?, ?)',
-    )
-    .run('touch-1', 'opp-1', '2026-07-02', 'outbound', 'email', 1)
   sqlite
     .prepare('INSERT INTO observations (id, timestamp, text) VALUES (?, ?, ?)')
     .run('obs-1', '2026-07-02T10:00:00.000Z', 'noted')
@@ -96,15 +87,11 @@ describe('resetData', () => {
     const result = resetData(OWN_TOKEN)
 
     expect(count('deen_days')).toBe(0)
-    expect(count('opportunities')).toBe(0)
-    expect(count('touches')).toBe(0)
     expect(count('observations')).toBe(0)
     expect(count('sadaqah_log')).toBe(0)
 
     expect(result.deleted).toMatchObject({
       deen_days: 2,
-      opportunities: 1,
-      touches: 1,
       observations: 1,
       sadaqah_log: 1,
     })
@@ -150,8 +137,6 @@ describe('resetData', () => {
 
     const backup = new Database(result.backup_path, { readonly: true })
     try {
-      const rows = backup.prepare('SELECT COUNT(*) AS c FROM opportunities').get() as { c: number }
-      expect(rows.c).toBe(1)
       const day = backup.prepare('SELECT COUNT(*) AS c FROM deen_days').get() as { c: number }
       expect(day.c).toBe(2)
     } finally {
@@ -175,7 +160,7 @@ describe('resetData', () => {
     resetData(OWN_TOKEN)
     const second = resetData(OWN_TOKEN)
 
-    expect(second.deleted).toMatchObject({ deen_days: 0, opportunities: 0, touches: 0 })
+    expect(second.deleted).toMatchObject({ deen_days: 0, observations: 0 })
     expect(setting('pin_hash')).toBe('salt:hash')
   })
 })

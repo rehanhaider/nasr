@@ -1,11 +1,6 @@
 # Nasr
 
-Self-hosted two-track progress tracker for Raspberry Pi. TypeScript end-to-end.
-
-Two modules in one app:
-
-- **Daily** — 40-day practice cycle with checklist, streaks, adherence tracking, and journal
-- **Pipeline** — 90-day opportunity tracker with follow-up discipline and outcome logging
+Self-hosted 40-day practice tracker for Raspberry Pi. TypeScript end-to-end.
 
 Designed for LAN use. Zero external network calls at runtime.
 
@@ -160,9 +155,6 @@ curl -X POST http://<pi-ip>:8080/api/v1/auth/logout \
 | GET/PUT | `/api/v1/deen/day/:date` | Single day |
 | GET/POST/DELETE | `/api/v1/deen/observations` | Observations |
 | GET/POST | `/api/v1/deen/sadaqah` | Sadaqah log |
-| GET/POST | `/api/v1/pipeline/opportunities` | Opportunities |
-| GET/PUT/DELETE | `/api/v1/pipeline/opportunity/:id` | Single opportunity |
-| GET/POST | `/api/v1/pipeline/touches` | Touch log |
 | GET | `/api/v1/export` | Export data |
 
 ### Lockout
@@ -216,8 +208,7 @@ next to a restored database will corrupt the restore.
 
 **Settings → Danger zone → Reset…**, then type `RESET` to confirm.
 
-Clears every logged entry — deen days, opportunities, touches, observations,
-sadaqah — and keeps your PIN and settings. Other sessions are revoked; the one
+Clears every logged entry — deen days, observations, sadaqah — and keeps your PIN and settings. Other sessions are revoked; the one
 you reset from is kept, so you stay logged in.
 
 A consistent backup (`VACUUM INTO`, so anything still in the `-wal` is
@@ -257,11 +248,7 @@ curl -H "Authorization: Bearer <token>" \
 
 # Deen CSV
 curl -H "Authorization: Bearer <token>" \
-  "http://<pi-ip>:8080/api/v1/export?format=csv&module=deen" -o deen.csv
-
-# Pipeline CSV
-curl -H "Authorization: Bearer <token>" \
-  "http://<pi-ip>:8080/api/v1/export?format=csv&module=pipeline" -o pipeline.csv
+  "http://<pi-ip>:8080/api/v1/export?format=csv" -o deen.csv
 ```
 
 ## Development
@@ -285,7 +272,6 @@ Tests cover:
 - Cycle-day arithmetic and date handling
 - Streak calculation (current and longest)
 - Adherence % computation
-- Ghosted eligibility (2 written outbound + 14 days rule)
 - Auth (PIN hashing, token extraction, cookie/bearer)
 
 ## Project Structure
@@ -294,7 +280,7 @@ Tests cover:
 nasr/
 ├── packages/shared/       Pure TS domain logic + Zod schemas
 │   ├── src/schemas/       Zod validation schemas
-│   ├── src/domain/        Cycle, streaks, adherence, ghosted
+│   ├── src/domain/        Cycle, streaks, adherence
 │   └── tests/             Unit tests (vitest)
 ├── apps/web/              TanStack Start application
 │   ├── src/db/            Drizzle ORM schema + migrations
@@ -325,7 +311,7 @@ The architecture is designed for this:
 ## Stack
 
 - Node.js 22, TypeScript strict
-- TanStack Start (framework), Router, Query, Form, Table
+- TanStack Start (framework), Router, Query, Form
 - Drizzle ORM + better-sqlite3
 - Tailwind CSS 4
 - pnpm workspaces monorepo
