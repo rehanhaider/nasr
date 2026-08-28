@@ -14,9 +14,25 @@ export const deenDays = sqliteTable('deen_days', {
   isha: text('isha'),
   morning_adhkar: integer('morning_adhkar', { mode: 'boolean' }).default(false),
   evening_adhkar: integer('evening_adhkar', { mode: 'boolean' }).default(false),
-  night_ayat: integer('night_ayat', { mode: 'boolean' }).default(false),
+  night_ayat_kursi: integer('night_ayat_kursi', { mode: 'boolean' }).default(false),
+  night_baqarah: integer('night_baqarah', { mode: 'boolean' }).default(false),
+  night_three_suras: integer('night_three_suras', { mode: 'boolean' }).default(false),
   ruqyah: integer('ruqyah', { mode: 'boolean' }).default(false),
   istighfar_count: integer('istighfar_count').default(0),
+  note: text('note'),
+})
+
+export const deenContent = sqliteTable('deen_content', {
+  id: text('id').primaryKey(),
+  item_key: text('item_key').notNull(),
+  title: text('title').notNull(),
+  arabic: text('arabic'),
+  transliteration: text('transliteration'),
+  meaning: text('meaning'),
+  repetitions: text('repetitions').notNull(),
+  reference: text('reference').notNull(),
+  grade: text('grade').notNull(),
+  sort_order: integer('sort_order').notNull(),
   note: text('note'),
 })
 

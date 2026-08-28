@@ -15,7 +15,9 @@ function makeDay(
     isha: null,
     morning_adhkar: false,
     evening_adhkar: false,
-    night_ayat: false,
+    night_ayat_kursi: false,
+    night_baqarah: false,
+    night_three_suras: false,
     ruqyah: false,
     istighfar_count: 0,
     note: null,
@@ -93,7 +95,9 @@ describe('overallAdherence', () => {
     const days = [
       makeDay('2025-01-01', {
         fajr: 'ontime', dhuhr: 'ontime', asr: 'ontime', maghrib: 'ontime', isha: 'ontime',
-        morning_adhkar: true, evening_adhkar: true, night_ayat: true, ruqyah: true,
+        morning_adhkar: true, evening_adhkar: true,
+        night_ayat_kursi: true, night_baqarah: true, night_three_suras: true,
+        ruqyah: true,
         istighfar_count: 100,
       }),
     ]

@@ -1,14 +1,15 @@
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
-import { useDeenDays, useDeenDay, useSettings, useOpportunities, useAuthStatus } from '../data/queries.js'
-import { useUpdateDeenDay } from '../data/mutations.js'
+import { useDeenContent, useDeenDays, useDeenDay, useSettings, useOpportunities, useAuthStatus } from '../data/queries.js'
+import { useCreateSadaqah, useUpdateDeenDay } from '../data/mutations.js'
 import {
   getCycleDay,
   isCycleComplete,
   fajrOnTimeStreak,
   getToday,
   isMissingNextAction,
+  DEEN_GUIDES,
 } from '@nasr/shared'
-import type { DeenDay, PrayerStatus } from '@nasr/shared'
+import type { DeenContent, DeenContentItemKey, DeenDay, PrayerStatus } from '@nasr/shared'
 import { useEffect, useState } from 'react'
 
 export const Route = createFileRoute('/')({
@@ -45,6 +46,8 @@ function TodayPage() {
   const deenDaysQuery = useDeenDays()
   const dayQuery = useDeenDay(today)
   const updateDay = useUpdateDeenDay()
+  const createSadaqah = useCreateSadaqah()
+  const contentQuery = useDeenContent()
   const oppsQuery = useOpportunities()
 
   if (authQuery.isLoading || settingsQuery.isLoading) {
@@ -69,11 +72,10 @@ function TodayPage() {
     { key: 'isha', label: 'Isha' },
   ]
 
-  const boolItems: Array<{ key: keyof Pick<DeenDay, 'morning_adhkar' | 'evening_adhkar' | 'night_ayat' | 'ruqyah'>; label: string }> = [
-    { key: 'morning_adhkar', label: 'Morning Adhkar' },
-    { key: 'evening_adhkar', label: 'Evening Adhkar' },
-    { key: 'night_ayat', label: 'Night Ayat' },
-    { key: 'ruqyah', label: 'Self-Ruqyah' },
+  const boolItems: Array<{ key: keyof Pick<DeenDay, 'morning_adhkar' | 'evening_adhkar' | 'ruqyah'>; itemKey: DeenContentItemKey }> = [
+    { key: 'morning_adhkar', itemKey: 'morning_adhkar' },
+    { key: 'evening_adhkar', itemKey: 'evening_adhkar' },
+    { key: 'ruqyah', itemKey: 'ruqyah' },
   ]
 
   function togglePrayer(key: string, currentVal: PrayerStatus) {
@@ -143,45 +145,62 @@ function TodayPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="label">Daily Practices</h2>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {boolItems.map(({ key, label }) => {
+        <div className="flex items-baseline justify-between gap-4">
+          <h2 className="label">Daily practices</h2>
+          <span className="text-xs text-zinc-600">Open a row for the recitation</span>
+        </div>
+        <div className="space-y-2">
+          {boolItems.map(({ key, itemKey }) => {
             const val = day?.[key] ?? false
             return (
-              <button
+              <PracticeDisclosure
                 key={key}
-                onClick={() => toggleBool(key, val)}
-                className={`flex items-center gap-3 rounded-xl border px-4 py-3.5 text-left transition ${
-                  val
-                    ? 'border-emerald-500/25 bg-emerald-500/8'
-                    : 'border-line bg-panel hover:border-line-strong hover:bg-elevated'
-                }`}
-              >
-                <span
-                  className={`flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-[5px] border transition ${
-                    val ? 'border-emerald-400 bg-emerald-400 text-canvas' : 'border-line-strong'
-                  }`}
-                >
-                  {val && (
-                    <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.2">
-                      <path d="M2.5 6.2 4.8 8.5 9.5 3.8" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                </span>
-                <span className={`text-sm font-medium ${val ? 'text-emerald-200' : 'text-zinc-300'}`}>{label}</span>
-              </button>
+                itemKey={itemKey}
+                complete={val}
+                items={(contentQuery.data ?? []).filter((item) => item.item_key === itemKey)}
+                onToggle={() => toggleBool(key, val)}
+              />
             )
           })}
+          <NightDisclosure
+            day={day}
+            items={(contentQuery.data ?? []).filter((item) => item.item_key === 'night_ayat')}
+            onToggle={(key, value) => updateDay.mutate({ date: today, [key]: !value })}
+          />
         </div>
       </section>
 
       <section className="space-y-3">
-        <h2 className="label">Istighfar</h2>
+        <GuideHeading
+          label="Istighfar"
+          itemKey="istighfar"
+          items={(contentQuery.data ?? []).filter((item) => item.item_key === 'istighfar')}
+        />
         <IstighfarCounter
           count={day?.istighfar_count ?? 0}
           target={settingsQuery.data?.istighfar_target ?? 100}
           onUpdate={(count) => updateDay.mutate({ date: today, istighfar_count: count })}
         />
+      </section>
+
+      <section className="space-y-3">
+        <GuideHeading
+          label="Sadaqah"
+          itemKey="sadaqah"
+          items={(contentQuery.data ?? []).filter((item) => item.item_key === 'sadaqah')}
+        />
+        <button
+          type="button"
+          disabled={createSadaqah.isPending}
+          onClick={() => createSadaqah.mutate({ date: today, note: null, amount: null })}
+          className="card flex w-full items-center justify-between gap-4 px-4 py-3.5 text-left transition hover:border-line-strong hover:bg-elevated active:scale-[0.99] disabled:opacity-50"
+        >
+          <span>
+            <span className="block text-sm font-medium text-zinc-200">{createSadaqah.isSuccess ? 'Sadaqah logged for today' : 'Log sadaqah for today'}</span>
+            <span className="mt-0.5 block text-xs text-zinc-500">Amount and note are optional</span>
+          </span>
+          <span className="font-mono text-lg text-primary-300">+</span>
+        </button>
       </section>
 
       <section className="space-y-3">
@@ -212,6 +231,181 @@ function TodayPage() {
       )}
     </div>
   )
+}
+
+function PracticeDisclosure({
+  itemKey,
+  complete,
+  items,
+  onToggle,
+}: {
+  itemKey: DeenContentItemKey
+  complete: boolean
+  items: DeenContent[]
+  onToggle: () => void
+}) {
+  const [open, setOpen] = useState(false)
+  const guide = DEEN_GUIDES[itemKey]
+
+  return (
+    <article className={`overflow-hidden rounded-xl border transition ${complete ? 'border-emerald-500/25 bg-emerald-500/6' : 'border-line bg-panel'}`}>
+      <div className="flex min-h-14 items-stretch">
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((value) => !value)}
+          className="flex min-w-0 flex-1 items-center justify-between gap-4 px-4 py-3 text-left transition hover:bg-elevated/70 active:bg-elevated"
+        >
+          <span className="min-w-0">
+            <span className={`block text-sm font-medium ${complete ? 'text-emerald-200' : 'text-zinc-200'}`}>{guide.title}</span>
+            <span className="mt-0.5 block truncate text-xs text-zinc-500">{guide.window}</span>
+          </span>
+          <Chevron open={open} />
+        </button>
+        <CompletionButton complete={complete} onClick={onToggle} label={guide.title} />
+      </div>
+      {open && <PracticeGuide itemKey={itemKey} items={items} />}
+    </article>
+  )
+}
+
+function NightDisclosure({
+  day,
+  items,
+  onToggle,
+}: {
+  day: DeenDay | undefined
+  items: DeenContent[]
+  onToggle: (key: 'night_ayat_kursi' | 'night_baqarah' | 'night_three_suras', current: boolean) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const checks = [
+    { key: 'night_ayat_kursi' as const, label: 'Ayat al-Kursi', value: day?.night_ayat_kursi ?? false },
+    { key: 'night_baqarah' as const, label: 'Al-Baqarah 285–286', value: day?.night_baqarah ?? false },
+    { key: 'night_three_suras' as const, label: 'Three suras + wipe', value: day?.night_three_suras ?? false },
+  ]
+  const completed = checks.filter((check) => check.value).length
+
+  return (
+    <article className={`overflow-hidden rounded-xl border transition ${completed === 3 ? 'border-emerald-500/25 bg-emerald-500/6' : 'border-line bg-panel'}`}>
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        className="flex min-h-14 w-full items-center justify-between gap-4 px-4 py-3 text-left transition hover:bg-elevated/70 active:bg-elevated"
+      >
+        <span className="min-w-0">
+          <span className="flex items-center gap-2 text-sm font-medium text-zinc-200">
+            Night recitation
+            <span className="font-mono text-[11px] text-zinc-500">{completed}/3</span>
+          </span>
+          <span className="mt-0.5 block truncate text-xs text-zinc-500">At bedtime · tracked in three parts</span>
+        </span>
+        <Chevron open={open} />
+      </button>
+      {open && (
+        <div className="border-t border-line">
+          <div className="grid gap-2 p-3 sm:grid-cols-3">
+            {checks.map((check) => (
+              <button
+                key={check.key}
+                type="button"
+                onClick={() => onToggle(check.key, check.value)}
+                className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 text-left text-xs font-medium transition active:scale-[0.99] ${check.value ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-200' : 'border-line bg-canvas/40 text-zinc-400 hover:border-line-strong'}`}
+              >
+                <CheckMark complete={check.value} />
+                {check.label}
+              </button>
+            ))}
+          </div>
+          <PracticeGuide itemKey="night_ayat" items={items} nested />
+        </div>
+      )}
+    </article>
+  )
+}
+
+function GuideHeading({ label, itemKey, items }: { label: string; itemKey: DeenContentItemKey; items: DeenContent[] }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="label">{label}</h2>
+        <button type="button" aria-expanded={open} onClick={() => setOpen((value) => !value)} className="flex items-center gap-1.5 text-xs font-medium text-primary-300 transition hover:text-primary-200">
+          {open ? 'Hide guide' : 'Open guide'}
+          <Chevron open={open} />
+        </button>
+      </div>
+      {open && <PracticeGuide itemKey={itemKey} items={items} />}
+    </>
+  )
+}
+
+function PracticeGuide({ itemKey, items, nested = false }: { itemKey: DeenContentItemKey; items: DeenContent[]; nested?: boolean }) {
+  const guide = DEEN_GUIDES[itemKey]
+  return (
+    <div className={`${nested ? '' : 'border-t border-line'} bg-canvas/45 px-4 pb-5 pt-4`}>
+      <div className="max-w-2xl">
+        <p className="text-xs font-medium text-primary-300">{guide.window}</p>
+        <p className="mt-1 text-sm leading-6 text-zinc-400">{guide.summary}</p>
+        <p className="mt-2 text-xs leading-5 text-zinc-600">Recite from the Arabic where you can. Transliteration is a rough aid; English gives the meaning.</p>
+      </div>
+      {items.length === 0 ? (
+        <p className="mt-4 text-sm text-zinc-600">Loading the recitation guide…</p>
+      ) : (
+        <ol className="mt-5 space-y-4">
+          {items.map((item, index) => <ContentEntry key={item.id} item={item} number={index + 1} />)}
+        </ol>
+      )}
+      {guide.closingNote && <p className="mt-5 border-l-2 border-primary-500/50 pl-3 text-xs leading-5 text-zinc-500">{guide.closingNote}</p>}
+      <p className="mt-5 text-[11px] leading-5 text-zinc-600">
+        Grades: <span className="text-emerald-400">sahih</span> authentic · <span className="text-sky-400">hasan</span> good and acceptable · <span className="text-amber-400">mawquf</span> reported from a Companion.
+      </p>
+    </div>
+  )
+}
+
+function ContentEntry({ item, number }: { item: DeenContent; number: number }) {
+  const gradeTone = item.grade === 'sahih' ? 'text-emerald-300 bg-emerald-500/10' : item.grade === 'hasan' ? 'text-sky-300 bg-sky-500/10' : 'text-amber-300 bg-amber-500/10'
+  return (
+    <li className="rounded-xl bg-panel p-4 ring-1 ring-line">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 gap-3">
+          <span className="font-mono text-xs text-zinc-600">{String(number).padStart(2, '0')}</span>
+          <h3 className="text-sm font-semibold leading-5 text-zinc-100">{item.title}</h3>
+        </div>
+        <span className="chip bg-primary-500/10 text-primary-300">{item.repetitions}</span>
+      </div>
+      {item.arabic && <p lang="ar" dir="rtl" className="mt-5 whitespace-pre-line text-right font-serif text-[1.65rem] leading-[2.15] text-zinc-50">{item.arabic}</p>}
+      {item.transliteration && <p className="mt-4 whitespace-pre-line text-sm italic leading-6 text-zinc-400">{item.transliteration}</p>}
+      {item.meaning && <p className="mt-3 whitespace-pre-line text-sm leading-6 text-zinc-300">{item.meaning}</p>}
+      {item.note && <p className="mt-3 rounded-lg bg-elevated px-3 py-2 text-xs leading-5 text-zinc-500">{item.note}</p>}
+      <div className="mt-4 flex flex-wrap items-start gap-2 border-t border-line pt-3">
+        <span className={`chip uppercase tracking-wide ${gradeTone}`}>{item.grade}</span>
+        <p className="min-w-0 flex-1 text-xs leading-5 text-zinc-600">{item.reference}</p>
+      </div>
+    </li>
+  )
+}
+
+function CompletionButton({ complete, onClick, label }: { complete: boolean; onClick: () => void; label: string }) {
+  return (
+    <button type="button" onClick={onClick} aria-label={`${complete ? 'Mark incomplete' : 'Mark complete'}: ${label}`} className="flex w-16 shrink-0 items-center justify-center border-l border-line transition hover:bg-elevated active:bg-line">
+      <CheckMark complete={complete} />
+    </button>
+  )
+}
+
+function CheckMark({ complete }: { complete: boolean }) {
+  return (
+    <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px] border transition ${complete ? 'border-emerald-400 bg-emerald-400 text-canvas' : 'border-line-strong bg-canvas/40'}`}>
+      {complete && <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M2.5 6.2 4.8 8.5 9.5 3.8" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+    </span>
+  )
+}
+
+function Chevron({ open }: { open: boolean }) {
+  return <svg viewBox="0 0 16 16" aria-hidden className={`h-4 w-4 shrink-0 text-zinc-600 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="1.5"><path d="m4 6 4 4 4-4" strokeLinecap="round" strokeLinejoin="round" /></svg>
 }
 
 function IstighfarCounter({ count, target, onUpdate }: { count: number; target: number; onUpdate: (n: number) => void }) {

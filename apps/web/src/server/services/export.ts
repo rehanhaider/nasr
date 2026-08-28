@@ -1,12 +1,14 @@
 import { db } from '../../db/index.js'
 import { deenDays, sadaqahLog, observations, opportunities, touches, settings } from '../../db/schema.js'
 import { desc } from 'drizzle-orm'
+import { getDeenContent } from './content.js'
 
 export function exportAllJson() {
   return {
     exported_at: new Date().toISOString(),
     settings: db.select().from(settings).all(),
     deen_days: db.select().from(deenDays).all(),
+    deen_content: getDeenContent(),
     sadaqah_log: db.select().from(sadaqahLog).all(),
     observations: db.select().from(observations).orderBy(desc(observations.timestamp)).all(),
     opportunities: db.select().from(opportunities).all(),
@@ -18,7 +20,8 @@ export function exportDeenCsv(): string {
   const days = db.select().from(deenDays).orderBy(deenDays.date).all()
   const headers = [
     'date', 'fajr', 'dhuhr', 'asr', 'maghrib', 'isha',
-    'morning_adhkar', 'evening_adhkar', 'night_ayat', 'ruqyah',
+    'morning_adhkar', 'evening_adhkar', 'night_ayat_kursi', 'night_baqarah',
+    'night_three_suras', 'ruqyah',
     'istighfar_count', 'note',
   ]
   const rows = days.map((d) =>

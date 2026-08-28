@@ -15,7 +15,9 @@ export const Route = createFileRoute('/api/v1/deen/day/$date')({
           return json({
             date: params.date,
             fajr: null, dhuhr: null, asr: null, maghrib: null, isha: null,
-            morning_adhkar: false, evening_adhkar: false, night_ayat: false, ruqyah: false,
+            morning_adhkar: false, evening_adhkar: false,
+            night_ayat_kursi: false, night_baqarah: false, night_three_suras: false,
+            ruqyah: false,
             istighfar_count: 0, note: null,
           })
         }

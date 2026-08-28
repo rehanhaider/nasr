@@ -28,6 +28,7 @@ import { Route as ApiV1PipelineOpportunitiesRouteImport } from './routes/api.v1.
 import { Route as ApiV1DeenSadaqahRouteImport } from './routes/api.v1.deen.sadaqah'
 import { Route as ApiV1DeenObservationsRouteImport } from './routes/api.v1.deen.observations'
 import { Route as ApiV1DeenDaysRouteImport } from './routes/api.v1.deen.days'
+import { Route as ApiV1DeenContentRouteImport } from './routes/api.v1.deen.content'
 import { Route as ApiV1AuthStatusRouteImport } from './routes/api.v1.auth.status'
 import { Route as ApiV1AuthLogoutRouteImport } from './routes/api.v1.auth.logout'
 import { Route as ApiV1AuthLoginRouteImport } from './routes/api.v1.auth.login'
@@ -130,6 +131,11 @@ const ApiV1DeenDaysRoute = ApiV1DeenDaysRouteImport.update({
   path: '/api/v1/deen/days',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1DeenContentRoute = ApiV1DeenContentRouteImport.update({
+  id: '/api/v1/deen/content',
+  path: '/api/v1/deen/content',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1AuthStatusRoute = ApiV1AuthStatusRouteImport.update({
   id: '/api/v1/auth/status',
   path: '/api/v1/auth/status',
@@ -174,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/auth/login': typeof ApiV1AuthLoginRoute
   '/api/v1/auth/logout': typeof ApiV1AuthLogoutRoute
   '/api/v1/auth/status': typeof ApiV1AuthStatusRoute
+  '/api/v1/deen/content': typeof ApiV1DeenContentRoute
   '/api/v1/deen/days': typeof ApiV1DeenDaysRoute
   '/api/v1/deen/observations': typeof ApiV1DeenObservationsRoute
   '/api/v1/deen/sadaqah': typeof ApiV1DeenSadaqahRoute
@@ -199,6 +206,7 @@ export interface FileRoutesByTo {
   '/api/v1/auth/login': typeof ApiV1AuthLoginRoute
   '/api/v1/auth/logout': typeof ApiV1AuthLogoutRoute
   '/api/v1/auth/status': typeof ApiV1AuthStatusRoute
+  '/api/v1/deen/content': typeof ApiV1DeenContentRoute
   '/api/v1/deen/days': typeof ApiV1DeenDaysRoute
   '/api/v1/deen/observations': typeof ApiV1DeenObservationsRoute
   '/api/v1/deen/sadaqah': typeof ApiV1DeenSadaqahRoute
@@ -226,6 +234,7 @@ export interface FileRoutesById {
   '/api/v1/auth/login': typeof ApiV1AuthLoginRoute
   '/api/v1/auth/logout': typeof ApiV1AuthLogoutRoute
   '/api/v1/auth/status': typeof ApiV1AuthStatusRoute
+  '/api/v1/deen/content': typeof ApiV1DeenContentRoute
   '/api/v1/deen/days': typeof ApiV1DeenDaysRoute
   '/api/v1/deen/observations': typeof ApiV1DeenObservationsRoute
   '/api/v1/deen/sadaqah': typeof ApiV1DeenSadaqahRoute
@@ -254,6 +263,7 @@ export interface FileRouteTypes {
     | '/api/v1/auth/login'
     | '/api/v1/auth/logout'
     | '/api/v1/auth/status'
+    | '/api/v1/deen/content'
     | '/api/v1/deen/days'
     | '/api/v1/deen/observations'
     | '/api/v1/deen/sadaqah'
@@ -279,6 +289,7 @@ export interface FileRouteTypes {
     | '/api/v1/auth/login'
     | '/api/v1/auth/logout'
     | '/api/v1/auth/status'
+    | '/api/v1/deen/content'
     | '/api/v1/deen/days'
     | '/api/v1/deen/observations'
     | '/api/v1/deen/sadaqah'
@@ -305,6 +316,7 @@ export interface FileRouteTypes {
     | '/api/v1/auth/login'
     | '/api/v1/auth/logout'
     | '/api/v1/auth/status'
+    | '/api/v1/deen/content'
     | '/api/v1/deen/days'
     | '/api/v1/deen/observations'
     | '/api/v1/deen/sadaqah'
@@ -329,6 +341,7 @@ export interface RootRouteChildren {
   ApiV1AuthLoginRoute: typeof ApiV1AuthLoginRoute
   ApiV1AuthLogoutRoute: typeof ApiV1AuthLogoutRoute
   ApiV1AuthStatusRoute: typeof ApiV1AuthStatusRoute
+  ApiV1DeenContentRoute: typeof ApiV1DeenContentRoute
   ApiV1DeenDaysRoute: typeof ApiV1DeenDaysRoute
   ApiV1DeenObservationsRoute: typeof ApiV1DeenObservationsRoute
   ApiV1DeenSadaqahRoute: typeof ApiV1DeenSadaqahRoute
@@ -473,6 +486,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1DeenDaysRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/deen/content': {
+      id: '/api/v1/deen/content'
+      path: '/api/v1/deen/content'
+      fullPath: '/api/v1/deen/content'
+      preLoaderRoute: typeof ApiV1DeenContentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/auth/status': {
       id: '/api/v1/auth/status'
       path: '/api/v1/auth/status'
@@ -553,6 +573,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1AuthLoginRoute: ApiV1AuthLoginRoute,
   ApiV1AuthLogoutRoute: ApiV1AuthLogoutRoute,
   ApiV1AuthStatusRoute: ApiV1AuthStatusRoute,
+  ApiV1DeenContentRoute: ApiV1DeenContentRoute,
   ApiV1DeenDaysRoute: ApiV1DeenDaysRoute,
   ApiV1DeenObservationsRoute: ApiV1DeenObservationsRoute,
   ApiV1DeenSadaqahRoute: ApiV1DeenSadaqahRoute,

@@ -19,7 +19,14 @@ export function calculateAdherence(
   istighfarTarget: number,
 ): Record<string, AdherenceResult> {
   const prayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const
-  const booleans = ['morning_adhkar', 'evening_adhkar', 'night_ayat', 'ruqyah'] as const
+  const booleans = [
+    'morning_adhkar',
+    'evening_adhkar',
+    'night_ayat_kursi',
+    'night_baqarah',
+    'night_three_suras',
+    'ruqyah',
+  ] as const
 
   const result: Record<string, AdherenceResult> = {}
 

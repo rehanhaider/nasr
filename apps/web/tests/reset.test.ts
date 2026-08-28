@@ -21,6 +21,7 @@ const OTHER_TOKEN = 'other-device-token'
 const hash = (token: string) => createHash('sha256').update(token).digest('hex')
 
 let resetData: typeof import('../src/server/services/reset.js')['resetData']
+let getDeenContent: typeof import('../src/server/services/content.js')['getDeenContent']
 let sqlite: import('better-sqlite3').Database
 
 beforeAll(async () => {
@@ -31,6 +32,7 @@ beforeAll(async () => {
   const mod = await import('../src/db/index.js')
   sqlite = mod.sqlite
   resetData = (await import('../src/server/services/reset.js')).resetData
+  getDeenContent = (await import('../src/server/services/content.js')).getDeenContent
 })
 
 afterAll(() => {
@@ -81,6 +83,14 @@ const setting = (key: string) =>
   (sqlite.prepare('SELECT value FROM settings WHERE key = ?').get(key) as { value: string } | undefined)?.value
 
 describe('resetData', () => {
+  it('seeds the referenced content table through the live service', () => {
+    const content = getDeenContent()
+    expect(content.length).toBeGreaterThan(20)
+    expect(content.some((item) => item.id === 'night-kursi' && item.repetitions === 'Once')).toBe(true)
+    expect(content.some((item) => item.item_key === 'morning_adhkar' && item.grade === 'mawquf')).toBe(true)
+    expect(count('deen_content')).toBe(content.length)
+  })
+
   it('deletes every logged entry and reports the counts', () => {
     seed()
     const result = resetData(OWN_TOKEN)

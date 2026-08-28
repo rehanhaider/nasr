@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import type { DeenDay, GhostedEligibility, Opportunity, Settings, Touch } from '@nasr/shared'
+import type { DeenContent, DeenDay, GhostedEligibility, Opportunity, Settings, Touch } from '@nasr/shared'
 import { apiGet } from './api.js'
 import { queryKeys } from './query-keys.js'
 
@@ -65,6 +65,14 @@ export function useDeenDay(date: string) {
     queryKey: queryKeys.deen.day(date),
     queryFn: () => apiGet<DeenDay>(`/deen/day/${encodeURIComponent(date)}`),
     enabled: !!date,
+  })
+}
+
+export function useDeenContent() {
+  return useQuery({
+    queryKey: queryKeys.deen.content,
+    queryFn: () => apiGet<DeenContent[]>('/deen/content'),
+    staleTime: Number.POSITIVE_INFINITY,
   })
 }
 
