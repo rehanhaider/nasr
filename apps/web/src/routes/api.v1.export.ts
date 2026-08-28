@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { requireAuth, json } from '../server/auth.js'
-import { exportAllJson, exportDeenCsv, exportPipelineCsv } from '../server/services/export.js'
+import { exportAllJson, exportDeenCsv } from '../server/services/export.js'
 
 export const Route = createFileRoute('/api/v1/export')({
   server: {
@@ -15,8 +15,8 @@ export const Route = createFileRoute('/api/v1/export')({
         const now = new Date().toISOString().replace(/[:.]/g, '-')
 
         if (format === 'csv') {
-          const csv = module === 'pipeline' ? exportPipelineCsv() : exportDeenCsv()
-          const filename = `nasr-${module ?? 'deen'}-${now}.csv`
+          const csv = exportDeenCsv()
+          const filename = `nasr-deen-${now}.csv`
           return new Response(csv, {
             headers: {
               'Content-Type': 'text/csv',

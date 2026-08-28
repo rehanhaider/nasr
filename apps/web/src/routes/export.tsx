@@ -36,12 +36,7 @@ function ExportPage() {
           badge="csv"
           onClick={() => download('csv', 'deen')}
         />
-        <ExportRow
-          label="Pipeline"
-          description="Opportunities and their details"
-          badge="csv"
-          onClick={() => download('csv', 'pipeline')}
-        />
+
       </div>
     </div>
   )

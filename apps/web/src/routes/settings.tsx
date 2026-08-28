@@ -20,17 +20,13 @@ function SettingsPage() {
     defaultValues: {
       timezone: s?.timezone ?? 'Asia/Kolkata',
       cycle_start_date: s?.cycle_start_date ?? '',
-      pipeline_start_date: s?.pipeline_start_date ?? '',
       istighfar_target: String(s?.istighfar_target ?? 100),
-      live_target: String(s?.live_target ?? 10),
     },
     onSubmit: async ({ value }) => {
       updateSettings.mutate({
         timezone: value.timezone,
         cycle_start_date: value.cycle_start_date || null,
-        pipeline_start_date: value.pipeline_start_date || null,
         istighfar_target: parseInt(value.istighfar_target, 10),
-        live_target: parseInt(value.live_target, 10),
       })
     },
   })
@@ -83,20 +79,6 @@ function SettingsPage() {
             />
           </Row>
 
-          <Row label="90-day pipeline start">
-            <form.Field
-              name="pipeline_start_date"
-              children={(field) => (
-                <input
-                  type="date"
-                  className="input"
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                />
-              )}
-            />
-          </Row>
-
           <Row label="Istighfar daily target">
             <form.Field
               name="istighfar_target"
@@ -112,20 +94,7 @@ function SettingsPage() {
             />
           </Row>
 
-          <Row label="Open conversations target">
-            <form.Field
-              name="live_target"
-              children={(field) => (
-                <input
-                  type="number"
-                  min="1"
-                  className="input font-mono"
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                />
-              )}
-            />
-          </Row>
+
         </div>
 
         <div className="flex items-center gap-3">
@@ -214,13 +183,13 @@ function ResetSection() {
       <h2 className="label">Danger zone</h2>
       <div className="card space-y-3 px-4 py-3.5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <span>
-            <span className="block text-sm font-medium text-zinc-200">Reset all data</span>
-            <span className="block text-xs text-zinc-500">
-              Deletes every deen day, opportunity, touch, observation and sadaqah entry. Your PIN and the settings
-              above are kept.
+            <span>
+              <span className="block text-sm font-medium text-zinc-200">Reset all data</span>
+              <span className="block text-xs text-zinc-500">
+                Deletes every deen day, observation and sadaqah entry. Your PIN and the settings
+                above are kept.
+              </span>
             </span>
-          </span>
           {!confirming && (
             <button onClick={() => setConfirming(true)} className="btn btn-danger btn-sm">
               Reset…

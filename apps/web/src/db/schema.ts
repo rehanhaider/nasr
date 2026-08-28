@@ -49,36 +49,6 @@ export const observations = sqliteTable('observations', {
   text: text('text').notNull(),
 })
 
-export const opportunities = sqliteTable('opportunities', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-  organisation: text('organisation'),
-  contact_name: text('contact_name'),
-  contact_channel: text('contact_channel'),
-  type: text('type').notNull(),
-  source: text('source'),
-  stage: text('stage').notNull(),
-  status: text('status').notNull().default('open'),
-  opened_date: text('opened_date').notNull(),
-  closed_date: text('closed_date'),
-  stage_at_close: text('stage_at_close'),
-  next_action: text('next_action'),
-  next_action_date: text('next_action_date'),
-  notes: text('notes'),
-})
-
-export const touches = sqliteTable('touches', {
-  id: text('id').primaryKey(),
-  opportunity_id: text('opportunity_id')
-    .notNull()
-    .references(() => opportunities.id, { onDelete: 'cascade' }),
-  date: text('date').notNull(),
-  direction: text('direction').notNull(),
-  channel: text('channel').notNull(),
-  written: integer('written', { mode: 'boolean' }).default(false),
-  note: text('note'),
-})
-
 export const sessions = sqliteTable('sessions', {
   token_hash: text('token_hash').primaryKey(),
   created_at: text('created_at').notNull(),

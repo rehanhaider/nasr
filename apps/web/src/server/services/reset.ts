@@ -4,8 +4,7 @@ import type { ResetResponse } from '@nasr/shared'
 import { sqlite } from '../../db/index.js'
 import { hashToken } from '../auth.js'
 
-/** Children before parents: touches reference opportunities. */
-const WIPE_ORDER = ['touches', 'opportunities', 'observations', 'deen_days', 'sadaqah_log'] as const
+const WIPE_ORDER = ['observations', 'deen_days', 'sadaqah_log'] as const
 
 /**
  * Transient auth state, not user settings: a stale lockout would otherwise

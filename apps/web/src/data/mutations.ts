@@ -3,14 +3,9 @@ import type {
   DeenDay,
   DeenDayUpdate,
   ObservationCreate,
-  Opportunity,
-  OpportunityCreate,
-  OpportunityUpdate,
   ResetResponse,
   Settings,
   SettingsUpdate,
-  Touch,
-  TouchCreate,
 } from '@nasr/shared'
 import { apiDelete, apiPost, apiPut } from './api.js'
 import { queryKeys } from './query-keys.js'
@@ -45,54 +40,6 @@ export function useDeleteObservation() {
       apiDelete<{ ok: boolean }>(`/deen/observations?id=${encodeURIComponent(id)}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.deen.observations })
-    },
-  })
-}
-
-export function useCreateOpportunity() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (data: OpportunityCreate) =>
-      apiPost<Opportunity>('/pipeline/opportunities', data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.pipeline.opportunities })
-    },
-  })
-}
-
-export function useUpdateOpportunity() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (data: OpportunityUpdate) =>
-      apiPut<Opportunity>(`/pipeline/opportunity/${encodeURIComponent(data.id)}`, data),
-    onSuccess: (_result, variables) => {
-      qc.invalidateQueries({ queryKey: queryKeys.pipeline.opportunity(variables.id) })
-      qc.invalidateQueries({ queryKey: queryKeys.pipeline.opportunities })
-    },
-  })
-}
-
-export function useDeleteOpportunity() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (id: string) =>
-      apiDelete<{ ok: boolean }>(`/pipeline/opportunity/${encodeURIComponent(id)}`),
-    onSuccess: (_result, id) => {
-      qc.removeQueries({ queryKey: queryKeys.pipeline.opportunity(id) })
-      qc.invalidateQueries({ queryKey: queryKeys.pipeline.opportunities })
-    },
-  })
-}
-
-export function useCreateTouch() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (data: TouchCreate) => apiPost<Touch>('/pipeline/touches', data),
-    onSuccess: (_result, variables) => {
-      // A touch changes the parent's staleness, last touch and written count.
-      qc.invalidateQueries({ queryKey: queryKeys.pipeline.opportunity(variables.opportunity_id) })
-      qc.invalidateQueries({ queryKey: queryKeys.pipeline.touches(variables.opportunity_id) })
-      qc.invalidateQueries({ queryKey: queryKeys.pipeline.opportunities })
     },
   })
 }

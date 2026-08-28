@@ -1,10 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import Database from 'better-sqlite3'
-import { drizzle } from 'drizzle-orm/better-sqlite3'
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
-import { resolve } from 'node:path'
+import { describe, it, expect } from 'vitest'
 import { randomBytes, scryptSync, createHash } from 'node:crypto'
-import { checkGhostedEligibility } from '@nasr/shared'
 
 describe('Auth: PIN and session logic', () => {
   it('hashes PIN with scrypt and verifies correctly', () => {
@@ -73,46 +68,4 @@ describe('Auth: cookie and bearer token extraction', () => {
   })
 })
 
-describe('Server-side ghosted rule enforcement', () => {
-  it('rejects ghosted when < 2 written outbound touches', () => {
-    const result = checkGhostedEligibility(
-      [{ direction: 'outbound', written: true, date: '2025-01-01' }],
-      '2025-02-01',
-    )
-    expect(result.eligible).toBe(false)
-  })
 
-  it('rejects ghosted when < 14 days since last outbound', () => {
-    const result = checkGhostedEligibility(
-      [
-        { direction: 'outbound', written: true, date: '2025-01-01' },
-        { direction: 'outbound', written: true, date: '2025-01-10' },
-      ],
-      '2025-01-15',
-    )
-    expect(result.eligible).toBe(false)
-  })
-
-  it('allows ghosted with 2+ written outbound and 14+ days', () => {
-    const result = checkGhostedEligibility(
-      [
-        { direction: 'outbound', written: true, date: '2025-01-01' },
-        { direction: 'outbound', written: true, date: '2025-01-05' },
-      ],
-      '2025-01-20',
-    )
-    expect(result.eligible).toBe(true)
-  })
-
-  it('inbound touches are ignored for ghosted check', () => {
-    const result = checkGhostedEligibility(
-      [
-        { direction: 'outbound', written: true, date: '2025-01-01' },
-        { direction: 'inbound', written: true, date: '2025-01-02' },
-      ],
-      '2025-02-01',
-    )
-    expect(result.eligible).toBe(false)
-    expect(result.writtenOutboundCount).toBe(1)
-  })
-})

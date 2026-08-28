@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import type { DeenContent, DeenDay, GhostedEligibility, Opportunity, Settings, Touch } from '@nasr/shared'
+import type { DeenContent, DeenDay, Settings } from '@nasr/shared'
 import { apiGet } from './api.js'
 import { queryKeys } from './query-keys.js'
 
@@ -18,22 +18,6 @@ export interface ObservationRecord {
   id: string
   timestamp: string
   text: string
-}
-
-/** GET /pipeline/opportunities — the list endpoint enriches each row. */
-export interface OpportunityWithMeta extends Opportunity {
-  last_touch_date: string | null
-  written_outbound_count: number
-}
-
-/** GET /pipeline/opportunity/$id — single opportunity plus derived fields. */
-export interface OpportunityDetail extends Opportunity {
-  touches: Touch[]
-  lastTouchDate: string | null
-  writtenOutboundCount: number
-  ghostedEligibility: GhostedEligibility
-  staleness: 'amber' | 'red' | null
-  missingNextAction: boolean
 }
 
 export function useAuthStatus() {
@@ -80,29 +64,5 @@ export function useObservations() {
   return useQuery({
     queryKey: queryKeys.deen.observations,
     queryFn: () => apiGet<ObservationRecord[]>('/deen/observations'),
-  })
-}
-
-export function useOpportunities() {
-  return useQuery({
-    queryKey: queryKeys.pipeline.opportunities,
-    queryFn: () => apiGet<OpportunityWithMeta[]>('/pipeline/opportunities'),
-  })
-}
-
-export function useOpportunity(id: string) {
-  return useQuery({
-    queryKey: queryKeys.pipeline.opportunity(id),
-    queryFn: () => apiGet<OpportunityDetail>(`/pipeline/opportunity/${encodeURIComponent(id)}`),
-    enabled: !!id,
-  })
-}
-
-export function useTouches(opportunityId: string) {
-  return useQuery({
-    queryKey: queryKeys.pipeline.touches(opportunityId),
-    queryFn: () =>
-      apiGet<Touch[]>(`/pipeline/touches?opportunity_id=${encodeURIComponent(opportunityId)}`),
-    enabled: !!opportunityId,
   })
 }

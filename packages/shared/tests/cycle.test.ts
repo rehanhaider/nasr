@@ -3,8 +3,6 @@ import {
   daysBetween,
   getCycleDay,
   isCycleComplete,
-  getPipelineDay,
-  isPipelineWindowComplete,
   datesInRange,
   cycleDatesForDay,
 } from '../src/domain/cycle.js'
@@ -64,26 +62,6 @@ describe('isCycleComplete', () => {
 
   it('returns true for day 41', () => {
     expect(isCycleComplete(41)).toBe(true)
-  })
-})
-
-describe('getPipelineDay', () => {
-  it('returns 1 on start date', () => {
-    expect(getPipelineDay('2025-03-01', '2025-03-01')).toBe(1)
-  })
-
-  it('returns correct day', () => {
-    expect(getPipelineDay('2025-03-01', '2025-04-01')).toBe(32)
-  })
-})
-
-describe('isPipelineWindowComplete', () => {
-  it('returns false for day 90', () => {
-    expect(isPipelineWindowComplete(90)).toBe(false)
-  })
-
-  it('returns true for day 91', () => {
-    expect(isPipelineWindowComplete(91)).toBe(true)
   })
 })
 
