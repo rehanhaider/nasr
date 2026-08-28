@@ -18,22 +18,49 @@ Designed for LAN use. Zero external network calls at runtime.
 
 ### Automated Install
 
+Clone anywhere *except* `/opt/nasr` — that is the install target, and the
+installer copies your checkout into it:
+
 ```bash
-git clone <your-repo-url> /opt/nasr
-cd /opt/nasr
+git clone <your-repo-url> ~/nasr
+cd ~/nasr
 chmod +x install.sh
 ./install.sh
 ```
 
 The installer:
 1. Installs Node.js 22 and pnpm if missing
-2. Installs dependencies
-3. Runs database migrations
-4. Prompts for your PIN (or reads `NASR_PIN` env var)
-5. Builds the app
-6. Installs and enables systemd services
+2. Syncs the checkout into `/opt/nasr` (`rsync --delete`, so files you deleted
+   from the repo also go away; `data/`, `backups/` and `.env` are never touched)
+3. Creates `/opt/nasr/.env` on first run, keeps it afterwards
+4. Installs dependencies
+5. Runs database migrations
+6. Asks for a PIN **only on a first install** — a PIN already in the database is
+   left alone
+7. Builds the app
+8. Installs the systemd units and **restarts** the service, then waits for it to
+   answer on port 8080
 
 Access the app at `http://<pi-ip>:8080`.
+
+### Re-running the installer
+
+`./install.sh` is the upgrade path: pull, re-run, done. It is idempotent and
+keeps your database, backups, `.env` and PIN.
+
+```bash
+cd ~/nasr && git pull && ./install.sh
+```
+
+| Flag | Effect |
+| --- | --- |
+| `--reset-pin` | Prompt for a new PIN even though one is set |
+| `--pin 1234` | Set the PIN non-interactively (also `NASR_PIN=1234`) |
+| `--no-restart` | Build, but leave the running service on the old build |
+| `--help` | Usage |
+
+`NASR_USER=<user>` selects the account the systemd units run as (default: the
+user invoking the script).
 
 ### Manual Setup
 
@@ -144,7 +171,11 @@ curl -X POST http://<pi-ip>:8080/api/v1/auth/logout \
 
 ## Changing the PIN
 
-Currently, update the PIN hash directly in SQLite:
+```bash
+cd ~/nasr && ./install.sh --reset-pin
+```
+
+Or update the hash directly in SQLite:
 
 ```bash
 cd /opt/nasr
@@ -273,7 +304,7 @@ nasr/
 │   └── migrations/        SQL migrations
 ├── nasr.service          systemd unit
 ├── nasr-backup.*         Backup service + timer
-├── install.sh             One-shot installer
+├── install.sh             Installer / upgrader (idempotent)
 └── README.md
 ```
 

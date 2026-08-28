@@ -1,44 +1,126 @@
 #!/usr/bin/env bash
-set -euo pipefail
-trap 'rc=$?; echo "" >&2; echo "install.sh: FAILED at line $LINENO (exit $rc)" >&2' ERR
+#
+# Nasr installer. Safe to re-run: it is a full install on a clean machine and an
+# in-place upgrade on a machine that already has Nasr, without touching the
+# database, the backups, the .env or the PIN.
+#
+# Usage:
+#   ./install.sh                 install or upgrade
+#   ./install.sh --reset-pin     ... and set a new PIN
+#   ./install.sh --pin 1234      ... non-interactively (implies --reset-pin
+#                                    when a PIN already exists)
+#   ./install.sh --no-restart    leave the running service alone
+#   ./install.sh --help
+#
+# Environment:
+#   NASR_USER   user the systemd units run as (default: the invoking user)
+#   NASR_PIN    same as --pin
+#
+set -Eeuo pipefail
 
 INSTALL_DIR="/opt/nasr"
-SERVICE_USER="${NASR_USER:-$(whoami)}"
+SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SERVICE_USER="${NASR_USER:-$(id -un)}"
+PIN="${NASR_PIN:-}"
+RESET_PIN=0
+RESTART=1
+
+# ---------------------------------------------------------------- diagnostics
+
+on_err() {
+  local rc=$1 line=$2
+  echo "" >&2
+  echo "install.sh: FAILED at line $line (exit $rc)" >&2
+  # A build that dies after the service was stopped would otherwise leave the
+  # app down with no hint why. Put it back on the previous build.
+  if [ "${SERVICE_STOPPED:-0}" = 1 ]; then
+    echo "install.sh: restarting nasr.service on the previous build..." >&2
+    sudo systemctl start nasr.service || true
+  fi
+  exit "$rc"
+}
+trap 'on_err $? $LINENO' ERR
+
+step() { echo ""; echo "==> $*"; }
+info() { echo "    $*"; }
+die()  { echo "install.sh: $*" >&2; exit 1; }
+
+# --------------------------------------------------------------------- usage
+
+usage() { sed -n '3,17p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --pin)        [ $# -ge 2 ] || die "--pin needs a value"; PIN="$2"; shift 2 ;;
+    --pin=*)      PIN="${1#*=}"; shift ;;
+    --reset-pin)  RESET_PIN=1; shift ;;
+    --no-restart) RESTART=0; shift ;;
+    -h|--help)    usage; exit 0 ;;
+    *)            die "unknown option: $1 (try --help)" ;;
+  esac
+done
+
+[ "$SRC_DIR" != "$INSTALL_DIR" ] || die "run this from a source checkout, not from $INSTALL_DIR"
+command -v rsync >/dev/null || die "rsync is required"
 
 echo "=== Nasr Installer ==="
+info "source:  $SRC_DIR"
+info "target:  $INSTALL_DIR"
+info "runs as: $SERVICE_USER"
 
-# 1. Node.js 22
-if ! command -v node &>/dev/null || [[ "$(node -v | cut -d. -f1 | tr -d v)" -lt 22 ]]; then
-  echo "Installing Node.js 22 LTS..."
+# Ask for the sudo password once, up front, rather than halfway through a build.
+# `sudo -v` alone is wrong here: under a NOPASSWD rule it still tries to refresh
+# the timestamp and fails outright when there is no TTY. Probe non-interactively
+# first and only prompt when a password is genuinely needed.
+if ! sudo -n true 2>/dev/null; then
+  [ -t 0 ] || die "sudo needs a password and there is no terminal to ask on"
+  sudo -v
+fi
+
+# ------------------------------------------------------------- 1. toolchain
+
+step "Checking Node.js"
+if ! command -v node &>/dev/null || [ "$(node -v | cut -d. -f1 | tr -d v)" -lt 22 ]; then
+  info "Installing Node.js 22 LTS..."
   curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
   sudo apt-get install -y nodejs
 fi
-echo "Node.js $(node -v)"
+info "Node.js $(node -v)"
 
-# 2. pnpm
 if ! command -v pnpm &>/dev/null; then
-  echo "Installing pnpm..."
+  info "Installing pnpm..."
   sudo npm install -g pnpm
 fi
-echo "pnpm $(pnpm -v)"
+info "pnpm $(pnpm -v)"
 
-# 3. Copy project files
-echo "Setting up $INSTALL_DIR..."
+# ---------------------------------------------------------------- 2. sources
+
+step "Syncing sources into $INSTALL_DIR"
 sudo mkdir -p "$INSTALL_DIR"
 sudo chown "$SERVICE_USER":"$SERVICE_USER" "$INSTALL_DIR"
+
+# --delete so files removed from the repo (old scripts, dropped routes, the
+# obsolete .npmrc) also disappear here; a re-install that only ever adds files
+# leaves stale code behind. Excluded paths are NOT deleted by rsync, which is
+# what protects data/, backups/, .env, node_modules/ and .output/.
+#
 # data/ and backups/ are anchored with a leading slash: they name the runtime
 # directories at the install root only. Unanchored, rsync also matches
 # apps/web/src/data, which silently drops the client data layer from the build.
-rsync -a --exclude node_modules --exclude .output --exclude .git \
-  --exclude /data --exclude /backups --exclude /.env ./ "$INSTALL_DIR/"
+rsync -a --delete \
+  --exclude node_modules --exclude .output --exclude .git \
+  --exclude /data --exclude /backups --exclude /.env \
+  "$SRC_DIR/" "$INSTALL_DIR/"
 
 cd "$INSTALL_DIR"
 
-# 3b. Environment file. Created once, never overwritten — this is the single
-# source of truth for runtime config: nasr.service reads it via
-# EnvironmentFile=, and the rest of this script sources it below.
+# ------------------------------------------------------------------ 3. .env
+
+# Created once, never overwritten — this is the single source of truth for
+# runtime config: nasr.service reads it via EnvironmentFile=, and the rest of
+# this script sources it below.
+step "Configuring $INSTALL_DIR/.env"
 if [ ! -f "$INSTALL_DIR/.env" ]; then
-  echo "Creating $INSTALL_DIR/.env..."
   cat > "$INSTALL_DIR/.env" <<ENVFILE
 # Generated by install.sh. Edit freely; re-running the installer keeps it.
 # systemd parses this file, so: no quotes, no export, no inline comments.
@@ -48,8 +130,9 @@ HOST=0.0.0.0
 NASR_DB_PATH=$INSTALL_DIR/data/nasr.db
 ENVFILE
   chmod 600 "$INSTALL_DIR/.env"
+  info "created"
 else
-  echo "Keeping existing $INSTALL_DIR/.env"
+  info "keeping existing .env"
 fi
 
 # Source it so migrations, the PIN bootstrap and the build all agree with the
@@ -60,8 +143,9 @@ set -a
 set +a
 export NASR_DB_PATH="${NASR_DB_PATH:-$INSTALL_DIR/data/nasr.db}"
 
-# 4. Install dependencies
-echo "Installing dependencies..."
+# ---------------------------------------------------------- 4. dependencies
+
+step "Installing dependencies"
 # confirmModulesPurge=false: a re-run over an existing node_modules built by a
 # different pnpm version otherwise aborts when there is no TTY.
 pnpm install --frozen-lockfile --config.confirmModulesPurge=false
@@ -75,14 +159,14 @@ pnpm install --frozen-lockfile --config.confirmModulesPurge=false
 # put the result where binding.js will look first.
 # The probe must construct a Database: require() alone never dlopens the binary,
 # binding.js is only reached from the Database constructor.
-echo "Checking better-sqlite3 native binding..."
-if (cd "$INSTALL_DIR/apps/web" && node -e "new (require('better-sqlite3'))(':memory:').close()") 2>/dev/null; then
-  echo "Prebuilt binary works."
+step "Checking the better-sqlite3 native binding"
+if (cd "$INSTALL_DIR/apps/web" && node --input-type=commonjs -e "new (require('better-sqlite3'))(':memory:').close()") 2>/dev/null; then
+  info "prebuilt binary works"
 else
-  echo "Prebuilt binary is unusable on this system. Building from source (this takes several minutes)..."
+  info "prebuilt binary is unusable here; building from source (several minutes)..."
   command -v gcc &>/dev/null && command -v make &>/dev/null || sudo apt-get install -y build-essential
   command -v python3 &>/dev/null || sudo apt-get install -y python3
-  BS3_DIR=$(cd "$INSTALL_DIR/apps/web" && node -e "const p=require('path'); console.log(p.dirname(p.dirname(require.resolve('better-sqlite3'))))")
+  BS3_DIR=$(cd "$INSTALL_DIR/apps/web" && node --input-type=commonjs -e "const p=require('path'); console.log(p.dirname(p.dirname(require.resolve('better-sqlite3'))))")
   (
     cd "$BS3_DIR"
     # --force_build=1: binding.gyp otherwise detects the bundled prebuild and skips compiling
@@ -93,74 +177,123 @@ else
     rm -f "$PREBUILD"
     cp build/Release/better_sqlite3.node "$PREBUILD"
   )
-  (cd "$INSTALL_DIR/apps/web" && node -e "new (require('better-sqlite3'))(':memory:').close(); console.log('Source-built better-sqlite3 loads OK.')")
+  (cd "$INSTALL_DIR/apps/web" && node --input-type=commonjs -e "new (require('better-sqlite3'))(':memory:').close()")
+  info "source-built better-sqlite3 loads OK"
 fi
 
-# 5. Run migrations
-echo "Running database migrations..."
+# ----------------------------------------------------------- 5. migrations
+
+step "Running database migrations"
 mkdir -p "$(dirname "$NASR_DB_PATH")"
 pnpm db:migrate
 
-# 6. Set PIN
-if [ -z "${NASR_PIN:-}" ]; then
-  echo ""
-  read -rsp "Set your PIN (min 4 chars): " pin
-  echo ""
-  if [ ${#pin} -lt 4 ]; then
-    echo "PIN must be at least 4 characters."
-    exit 1
-  fi
+# ------------------------------------------------------------------ 6. PIN
+
+# Reads the DB rather than a marker file, so the PIN survives a wiped install
+# directory and a re-install never clobbers a PIN the user changed in the app.
+pin_is_set() {
+  (cd "$INSTALL_DIR/apps/web" && node --input-type=commonjs -e "
+    const Database = require('better-sqlite3');
+    const db = new Database(process.env.NASR_DB_PATH, { readonly: true });
+    const row = db.prepare(\"SELECT value FROM settings WHERE key = 'pin_hash'\").get();
+    db.close();
+    process.exit(row && row.value ? 0 : 1);
+  ") &>/dev/null
+}
+
+set_pin() {
+  (
+    cd "$INSTALL_DIR/apps/web"
+    # The PIN is passed via env, never interpolated into the JS source.
+    NASR_PIN_VALUE="$1" node --input-type=commonjs -e "
+      const Database = require('better-sqlite3');
+      const crypto = require('crypto');
+      const db = new Database(process.env.NASR_DB_PATH);
+      const salt = crypto.randomBytes(16).toString('hex');
+      const hash = crypto.scryptSync(process.env.NASR_PIN_VALUE, salt, 64).toString('hex');
+      db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('pin_hash', salt + ':' + hash);
+      db.close();
+    "
+  )
+}
+
+step "Checking the PIN"
+if pin_is_set && [ -z "$PIN" ] && [ "$RESET_PIN" = 0 ]; then
+  info "a PIN is already set; keeping it (use --reset-pin to change it)"
 else
-  pin="$NASR_PIN"
-  echo "Using PIN from NASR_PIN environment variable."
+  if [ -z "$PIN" ]; then
+    [ -t 0 ] || die "no PIN set and no terminal to ask on; pass --pin or set NASR_PIN"
+    read -rsp "    Set your PIN (min 4 chars): " PIN
+    echo ""
+  else
+    info "using the PIN from --pin/NASR_PIN"
+  fi
+  [ ${#PIN} -ge 4 ] || die "PIN must be at least 4 characters"
+  set_pin "$PIN"
+  info "PIN set"
 fi
 
-# Set PIN directly in the DB. Run from apps/web: better-sqlite3 is a dependency
-# of that workspace package, so it does not resolve from the repo root.
-# The PIN is passed via env, never interpolated into the JS source.
-(
-cd "$INSTALL_DIR/apps/web"
-NASR_PIN_VALUE="$pin" node --input-type=commonjs -e "
-  const Database = require('better-sqlite3');
-  const crypto = require('crypto');
-  const db = new Database(process.env.NASR_DB_PATH);
-  const salt = crypto.randomBytes(16).toString('hex');
-  const hash = crypto.scryptSync(process.env.NASR_PIN_VALUE, salt, 64).toString('hex');
-  db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('pin_hash', salt + ':' + hash);
-  db.close();
-  console.log('PIN set successfully.');
-"
-)
+# ---------------------------------------------------------------- 7. build
 
-# 7. Build
-echo "Building..."
+step "Building"
 pnpm build
+[ -f "$INSTALL_DIR/apps/web/.output/server/index.mjs" ] || die "build produced no server bundle"
 
-# 8. Install systemd units
-echo "Installing systemd services..."
+# -------------------------------------------------------------- 8. systemd
+
+step "Installing systemd units"
 sudo cp "$INSTALL_DIR/nasr.service" /etc/systemd/system/
 sudo cp "$INSTALL_DIR/nasr-backup.service" /etc/systemd/system/
 sudo cp "$INSTALL_DIR/nasr-backup.timer" /etc/systemd/system/
 
-# Update user in both units. The backup unit must run as the same user, or it
-# creates root-owned backups the app user cannot write to or restore from.
-sudo sed -i "s/User=rehan/User=$SERVICE_USER/" /etc/systemd/system/nasr.service
-sudo sed -i "s/User=rehan/User=$SERVICE_USER/" /etc/systemd/system/nasr-backup.service
+# Update the user in both units. The backup unit must run as the same user, or
+# it creates root-owned backups the app user cannot write to or restore from.
+sudo sed -i "s/^User=.*/User=$SERVICE_USER/" /etc/systemd/system/nasr.service
+sudo sed -i "s/^User=.*/User=$SERVICE_USER/" /etc/systemd/system/nasr-backup.service
 
 # An earlier install may have left a root-owned backups directory behind.
 sudo mkdir -p "$INSTALL_DIR/backups"
 sudo chown -R "$SERVICE_USER":"$SERVICE_USER" "$INSTALL_DIR/backups"
 
 sudo systemctl daemon-reload
-# enable (not --now) then restart: `enable --now` only *starts* a stopped unit,
-# so on a re-install over a running service it is a no-op and the old process
-# keeps serving the previous build out of memory. restart always picks up the
-# .output/ produced in step 7.
 sudo systemctl enable nasr.service nasr-backup.timer
-sudo systemctl restart nasr.service
-sudo systemctl restart nasr-backup.timer
+
+if [ "$RESTART" = 1 ]; then
+  step "Restarting Nasr"
+  # restart, not `enable --now`: --now only *starts* a stopped unit, so on a
+  # re-install over a running service it is a no-op and the old process keeps
+  # serving the previous build out of memory.
+  SERVICE_STOPPED=1
+  sudo systemctl restart nasr.service
+  sudo systemctl restart nasr-backup.timer
+  SERVICE_STOPPED=0
+
+  # Confirm it actually came up on the new build rather than crash-looping.
+  READY=0
+  for i in $(seq 1 20); do
+    # A unit that died takes is-active with it; stop waiting and report.
+    systemctl is-active --quiet nasr.service || break
+    if command -v curl >/dev/null; then
+      # stderr suppressed: a refused connection on the first tries is
+      # expected while the server boots, not something to report.
+      curl -fsS -o /dev/null --max-time 2 "http://127.0.0.1:${PORT:-8080}/" 2>/dev/null && { READY=1; break; }
+    else
+      # No curl: settle for the unit still being up after a few seconds, which
+      # is enough to catch an immediate crash loop.
+      [ "$i" -ge 5 ] && { READY=1; break; }
+    fi
+    sleep 1
+  done
+  if [ "$READY" != 1 ]; then
+    systemctl status nasr.service --no-pager || true
+    die "nasr.service did not start serving on port ${PORT:-8080}; see the status above"
+  fi
+  info "serving on port ${PORT:-8080}"
+else
+  info "--no-restart: the running service is still on the previous build"
+fi
 
 echo ""
-echo "=== Nasr is running! ==="
-echo "Open http://$(hostname -I | awk '{print $1}'):8080 in your browser."
+echo "=== Nasr is installed ==="
+echo "Open http://$(hostname -I | awk '{print $1}'):${PORT:-8080} in your browser."
 echo ""
