@@ -47,7 +47,6 @@ const navItems = [
   { to: '/' as const, label: 'Today', exact: true },
   { to: '/deen/history' as const, label: 'History', exact: false },
   { to: '/deen/observations' as const, label: 'Notes', exact: false },
-  { to: '/review' as const, label: 'Review', exact: false },
 ]
 
 const navLink =

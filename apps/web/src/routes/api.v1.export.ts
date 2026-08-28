@@ -11,7 +11,6 @@ export const Route = createFileRoute('/api/v1/export')({
 
         const url = new URL(request.url)
         const format = url.searchParams.get('format') ?? 'json'
-        const module = url.searchParams.get('module')
         const now = new Date().toISOString().replace(/[:.]/g, '-')
 
         if (format === 'csv') {

@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as ReviewRouteImport } from './routes/review'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ExportRouteImport } from './routes/export'
 import { Route as IndexRouteImport } from './routes/index'
@@ -31,11 +30,6 @@ import { Route as ApiV1DeenDayDateRouteImport } from './routes/api.v1.deen.day.$
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReviewRoute = ReviewRouteImport.update({
-  id: '/review',
-  path: '/review',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -123,7 +117,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/export': typeof ExportRoute
   '/login': typeof LoginRoute
-  '/review': typeof ReviewRoute
   '/settings': typeof SettingsRoute
   '/deen/history': typeof DeenHistoryRoute
   '/deen/observations': typeof DeenObservationsRoute
@@ -143,7 +136,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/export': typeof ExportRoute
   '/login': typeof LoginRoute
-  '/review': typeof ReviewRoute
   '/settings': typeof SettingsRoute
   '/deen/history': typeof DeenHistoryRoute
   '/deen/observations': typeof DeenObservationsRoute
@@ -164,7 +156,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/export': typeof ExportRoute
   '/login': typeof LoginRoute
-  '/review': typeof ReviewRoute
   '/settings': typeof SettingsRoute
   '/deen/history': typeof DeenHistoryRoute
   '/deen/observations': typeof DeenObservationsRoute
@@ -186,7 +177,6 @@ export interface FileRouteTypes {
     | '/'
     | '/export'
     | '/login'
-    | '/review'
     | '/settings'
     | '/deen/history'
     | '/deen/observations'
@@ -206,7 +196,6 @@ export interface FileRouteTypes {
     | '/'
     | '/export'
     | '/login'
-    | '/review'
     | '/settings'
     | '/deen/history'
     | '/deen/observations'
@@ -226,7 +215,6 @@ export interface FileRouteTypes {
     | '/'
     | '/export'
     | '/login'
-    | '/review'
     | '/settings'
     | '/deen/history'
     | '/deen/observations'
@@ -247,7 +235,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ExportRoute: typeof ExportRoute
   LoginRoute: typeof LoginRoute
-  ReviewRoute: typeof ReviewRoute
   SettingsRoute: typeof SettingsRoute
   DeenHistoryRoute: typeof DeenHistoryRoute
   DeenObservationsRoute: typeof DeenObservationsRoute
@@ -270,13 +257,6 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/review': {
-      id: '/review'
-      path: '/review'
-      fullPath: '/review'
-      preLoaderRoute: typeof ReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -410,7 +390,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ExportRoute: ExportRoute,
   LoginRoute: LoginRoute,
-  ReviewRoute: ReviewRoute,
   SettingsRoute: SettingsRoute,
   DeenHistoryRoute: DeenHistoryRoute,
   DeenObservationsRoute: DeenObservationsRoute,

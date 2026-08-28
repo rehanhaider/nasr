@@ -248,7 +248,7 @@ curl -H "Authorization: Bearer <token>" \
 
 # Deen CSV
 curl -H "Authorization: Bearer <token>" \
-  "http://<pi-ip>:8080/api/v1/export?format=csv&module=deen" -o deen.csv
+  "http://<pi-ip>:8080/api/v1/export?format=csv" -o deen.csv
 ```
 
 ## Development
@@ -311,7 +311,7 @@ The architecture is designed for this:
 ## Stack
 
 - Node.js 22, TypeScript strict
-- TanStack Start (framework), Router, Query, Form, Table
+- TanStack Start (framework), Router, Query, Form
 - Drizzle ORM + better-sqlite3
 - Tailwind CSS 4
 - pnpm workspaces monorepo
