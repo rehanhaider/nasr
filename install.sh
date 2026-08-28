@@ -152,8 +152,13 @@ sudo mkdir -p "$INSTALL_DIR/backups"
 sudo chown -R "$SERVICE_USER":"$SERVICE_USER" "$INSTALL_DIR/backups"
 
 sudo systemctl daemon-reload
-sudo systemctl enable --now nasr.service
-sudo systemctl enable --now nasr-backup.timer
+# enable (not --now) then restart: `enable --now` only *starts* a stopped unit,
+# so on a re-install over a running service it is a no-op and the old process
+# keeps serving the previous build out of memory. restart always picks up the
+# .output/ produced in step 7.
+sudo systemctl enable nasr.service nasr-backup.timer
+sudo systemctl restart nasr.service
+sudo systemctl restart nasr-backup.timer
 
 echo ""
 echo "=== Nasr is running! ==="
