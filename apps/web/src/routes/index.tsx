@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
 import { useDeenContent, useDeenDays, useDeenDay, useSettings, useOpportunities, useAuthStatus } from '../data/queries.js'
-import { useCreateSadaqah, useUpdateDeenDay } from '../data/mutations.js'
+import { useUpdateDeenDay } from '../data/mutations.js'
 import {
   getCycleDay,
   isCycleComplete,
@@ -30,9 +30,16 @@ const statusDot: Record<string, string> = {
   none: 'bg-zinc-700',
 }
 
+function shiftDate(date: string, days: number): string {
+  const shifted = new Date(`${date}T00:00:00Z`)
+  shifted.setUTCDate(shifted.getUTCDate() + days)
+  return shifted.toISOString().slice(0, 10)
+}
+
 function TodayPage() {
   const authQuery = useAuthStatus()
   const navigate = useNavigate()
+  const [dayOffset, setDayOffset] = useState(0)
 
   useEffect(() => {
     if (authQuery.data && !authQuery.data.authenticated) {
@@ -43,10 +50,11 @@ function TodayPage() {
   const settingsQuery = useSettings()
   const timezone = settingsQuery.data?.timezone ?? 'Asia/Kolkata'
   const today = getToday(timezone)
+  const selectedDate = shiftDate(today, dayOffset)
+  const isToday = dayOffset === 0
   const deenDaysQuery = useDeenDays()
-  const dayQuery = useDeenDay(today)
+  const dayQuery = useDeenDay(selectedDate)
   const updateDay = useUpdateDeenDay()
-  const createSadaqah = useCreateSadaqah()
   const contentQuery = useDeenContent()
   const oppsQuery = useOpportunities()
 
@@ -54,10 +62,10 @@ function TodayPage() {
     return <p className="py-24 text-center text-sm text-zinc-600">Loading…</p>
   }
 
-  const cycleDay = getCycleDay(settingsQuery.data?.cycle_start_date ?? null, today)
+  const cycleDay = getCycleDay(settingsQuery.data?.cycle_start_date ?? null, selectedDate)
   const cycleComplete = isCycleComplete(cycleDay)
   const allDays = deenDaysQuery.data?.days ?? []
-  const fajrStreak = fajrOnTimeStreak(allDays, today)
+  const fajrStreak = fajrOnTimeStreak(allDays, selectedDate)
   const day = dayQuery.data
 
   const opportunities = oppsQuery.data ?? []
@@ -82,11 +90,11 @@ function TodayPage() {
     const cycle: PrayerStatus[] = [null, 'ontime', 'qada', 'missed']
     const idx = cycle.indexOf(currentVal)
     const next = cycle[(idx + 1) % cycle.length]
-    updateDay.mutate({ date: today, [key]: next })
+    updateDay.mutate({ date: selectedDate, [key]: next })
   }
 
   function toggleBool(key: string, currentVal: boolean) {
-    updateDay.mutate({ date: today, [key]: !currentVal })
+    updateDay.mutate({ date: selectedDate, [key]: !currentVal })
   }
 
   function statusLabel(val: PrayerStatus): string {
@@ -102,8 +110,29 @@ function TodayPage() {
     <div className="space-y-10">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Today</h1>
-          <p className="mt-1 font-mono text-xs text-zinc-500">{today}</p>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setDayOffset((offset) => offset - 1)}
+              aria-label="Previous day"
+              className="btn btn-ghost h-9 w-9 p-0 text-lg"
+            >
+              ‹
+            </button>
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight">{isToday ? 'Today' : 'Previous day'}</h1>
+              <p className="mt-1 font-mono text-xs text-zinc-500">{selectedDate}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDayOffset((offset) => Math.min(0, offset + 1))}
+              disabled={isToday}
+              aria-label="Next day"
+              className="btn btn-ghost h-9 w-9 p-0 text-lg disabled:opacity-30"
+            >
+              ›
+            </button>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {cycleDay !== null && (
@@ -165,7 +194,7 @@ function TodayPage() {
           <NightDisclosure
             day={day}
             items={(contentQuery.data ?? []).filter((item) => item.item_key === 'night_ayat')}
-            onToggle={(key, value) => updateDay.mutate({ date: today, [key]: !value })}
+            onToggle={(key, value) => updateDay.mutate({ date: selectedDate, [key]: !value })}
           />
         </div>
       </section>
@@ -179,35 +208,16 @@ function TodayPage() {
         <IstighfarCounter
           count={day?.istighfar_count ?? 0}
           target={settingsQuery.data?.istighfar_target ?? 100}
-          onUpdate={(count) => updateDay.mutate({ date: today, istighfar_count: count })}
+          onUpdate={(count) => updateDay.mutate({ date: selectedDate, istighfar_count: count })}
         />
-      </section>
-
-      <section className="space-y-3">
-        <GuideHeading
-          label="Sadaqah"
-          itemKey="sadaqah"
-          items={(contentQuery.data ?? []).filter((item) => item.item_key === 'sadaqah')}
-        />
-        <button
-          type="button"
-          disabled={createSadaqah.isPending}
-          onClick={() => createSadaqah.mutate({ date: today, note: null, amount: null })}
-          className="card flex w-full items-center justify-between gap-4 px-4 py-3.5 text-left transition hover:border-line-strong hover:bg-elevated active:scale-[0.99] disabled:opacity-50"
-        >
-          <span>
-            <span className="block text-sm font-medium text-zinc-200">{createSadaqah.isSuccess ? 'Sadaqah logged for today' : 'Log sadaqah for today'}</span>
-            <span className="mt-0.5 block text-xs text-zinc-500">Amount and note are optional</span>
-          </span>
-          <span className="font-mono text-lg text-primary-300">+</span>
-        </button>
       </section>
 
       <section className="space-y-3">
         <h2 className="label">Note</h2>
         <DayNote
           note={day?.note ?? ''}
-          onSave={(note) => updateDay.mutate({ date: today, note: note || null })}
+          dateLabel={isToday ? 'today' : selectedDate}
+          onSave={(note) => updateDay.mutate({ date: selectedDate, note: note || null })}
         />
       </section>
 
@@ -451,7 +461,7 @@ function IstighfarCounter({ count, target, onUpdate }: { count: number; target: 
   )
 }
 
-function DayNote({ note, onSave }: { note: string; onSave: (n: string) => void }) {
+function DayNote({ note, dateLabel, onSave }: { note: string; dateLabel: string; onSave: (n: string) => void }) {
   const [editing, setEditing] = useState(false)
   const [text, setText] = useState(note)
 
@@ -463,7 +473,7 @@ function DayNote({ note, onSave }: { note: string; onSave: (n: string) => void }
         onClick={() => setEditing(true)}
         className="card w-full px-4 py-3.5 text-left text-sm text-zinc-400 transition hover:border-line-strong hover:bg-elevated"
       >
-        {note || <span className="text-zinc-600">Add a note for today…</span>}
+        {note || <span className="text-zinc-600">Add a note for {dateLabel}…</span>}
       </button>
     )
   }

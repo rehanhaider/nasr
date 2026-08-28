@@ -8,7 +8,6 @@ export const queryKeys = {
     days: ['deen', 'days'] as const,
     day: (date: string) => ['deen', 'day', date] as const,
     observations: ['deen', 'observations'] as const,
-    sadaqah: ['deen', 'sadaqah'] as const,
     content: ['deen', 'content'] as const,
   },
   pipeline: {

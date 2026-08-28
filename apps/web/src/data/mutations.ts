@@ -7,7 +7,6 @@ import type {
   OpportunityCreate,
   OpportunityUpdate,
   ResetResponse,
-  SadaqahCreate,
   Settings,
   SettingsUpdate,
   Touch,
@@ -25,16 +24,6 @@ export function useUpdateDeenDay() {
     onSuccess: (_result, variables) => {
       qc.invalidateQueries({ queryKey: queryKeys.deen.day(variables.date) })
       qc.invalidateQueries({ queryKey: queryKeys.deen.days })
-    },
-  })
-}
-
-export function useCreateSadaqah() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (data: SadaqahCreate) => apiPost('/deen/sadaqah', data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.deen.sadaqah })
     },
   })
 }
