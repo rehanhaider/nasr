@@ -332,4 +332,4 @@ The architecture is designed for this:
 
 ## License
 
-Private / personal use.
+MIT — see [LICENSE](LICENSE).
