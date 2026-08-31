@@ -81,10 +81,14 @@ function TodayPage() {
   ]
 
   function togglePrayer(key: string, currentVal: PrayerStatus) {
-    const cycle: PrayerStatus[] = [null, 'ontime', 'qada', 'missed']
-    const idx = cycle.indexOf(currentVal)
+    const cycle: Exclude<PrayerStatus, null>[] = ['ontime', 'qada', 'missed']
+    const idx = currentVal === null ? -1 : cycle.indexOf(currentVal)
     const next = cycle[(idx + 1) % cycle.length]
     updateDay.mutate({ date: selectedDate, [key]: next })
+  }
+
+  function clearPrayer(key: string) {
+    updateDay.mutate({ date: selectedDate, [key]: null })
   }
 
   function toggleBool(key: string, currentVal: boolean) {
@@ -151,17 +155,30 @@ function TodayPage() {
             const val = (day?.[key] ?? null) as PrayerStatus
             const tone = val ?? 'none'
             return (
-              <button
+              <div
                 key={key}
-                onClick={() => togglePrayer(key, val)}
-                className="flex items-center justify-between rounded-xl border border-line bg-panel px-4 py-3.5 text-left transition hover:border-line-strong hover:bg-elevated"
+                className="flex items-center rounded-xl border border-line bg-panel transition focus-within:border-line-strong hover:border-line-strong hover:bg-elevated"
               >
-                <span className="flex items-center gap-2.5">
-                  <span className={`h-1.5 w-1.5 rounded-full transition-colors ${statusDot[tone]}`} />
-                  <span className="text-sm font-medium text-zinc-200">{label}</span>
-                </span>
-                <span className={`chip ${statusTone[tone]}`}>{statusLabel(val)}</span>
-              </button>
+                <button
+                  onClick={() => togglePrayer(key, val)}
+                  className="flex flex-1 items-center justify-between px-4 py-3.5 text-left"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <span className={`h-1.5 w-1.5 rounded-full transition-colors ${statusDot[tone]}`} />
+                    <span className="text-sm font-medium text-zinc-200">{label}</span>
+                  </span>
+                  <span className={`chip ${statusTone[tone]}`}>{statusLabel(val)}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => clearPrayer(key)}
+                  disabled={val === null}
+                  aria-label={`Clear ${label}`}
+                  className="px-3 py-3.5 text-sm text-zinc-600 transition hover:text-zinc-300 disabled:opacity-0"
+                >
+                  ✕
+                </button>
+              </div>
             )
           })}
         </div>

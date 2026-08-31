@@ -21,21 +21,23 @@ export function getDay(date: string): DeenDay | null {
 
 export function upsertDay(data: DeenDayUpdate): DeenDay {
   const existing = getDay(data.date)
+  const pick = <T,>(next: T | undefined, prev: T | undefined, fallback: T): T =>
+    next !== undefined ? next : (prev !== undefined ? prev : fallback)
   const merged = {
     date: data.date,
-    fajr: data.fajr ?? existing?.fajr ?? null,
-    dhuhr: data.dhuhr ?? existing?.dhuhr ?? null,
-    asr: data.asr ?? existing?.asr ?? null,
-    maghrib: data.maghrib ?? existing?.maghrib ?? null,
-    isha: data.isha ?? existing?.isha ?? null,
-    morning_adhkar: data.morning_adhkar ?? existing?.morning_adhkar ?? false,
-    evening_adhkar: data.evening_adhkar ?? existing?.evening_adhkar ?? false,
-    night_ayat_kursi: data.night_ayat_kursi ?? existing?.night_ayat_kursi ?? false,
-    night_baqarah: data.night_baqarah ?? existing?.night_baqarah ?? false,
-    night_three_suras: data.night_three_suras ?? existing?.night_three_suras ?? false,
-    ruqyah: data.ruqyah ?? existing?.ruqyah ?? false,
-    istighfar_count: data.istighfar_count ?? existing?.istighfar_count ?? 0,
-    note: data.note !== undefined ? data.note : (existing?.note ?? null),
+    fajr: pick(data.fajr, existing?.fajr, null),
+    dhuhr: pick(data.dhuhr, existing?.dhuhr, null),
+    asr: pick(data.asr, existing?.asr, null),
+    maghrib: pick(data.maghrib, existing?.maghrib, null),
+    isha: pick(data.isha, existing?.isha, null),
+    morning_adhkar: pick(data.morning_adhkar, existing?.morning_adhkar, false),
+    evening_adhkar: pick(data.evening_adhkar, existing?.evening_adhkar, false),
+    night_ayat_kursi: pick(data.night_ayat_kursi, existing?.night_ayat_kursi, false),
+    night_baqarah: pick(data.night_baqarah, existing?.night_baqarah, false),
+    night_three_suras: pick(data.night_three_suras, existing?.night_three_suras, false),
+    ruqyah: pick(data.ruqyah, existing?.ruqyah, false),
+    istighfar_count: pick(data.istighfar_count, existing?.istighfar_count, 0),
+    note: pick(data.note, existing?.note, null),
   }
 
   db.insert(deenDays)
