@@ -11,6 +11,14 @@ import { apiDelete, apiPost, apiPut } from './api.js'
 import { queryKeys } from './query-keys.js'
 import type { ObservationRecord } from './queries.js'
 
+function clearSwCaches(names: string[]) {
+  if (typeof window === 'undefined' || !('caches' in window)) return
+  for (const name of names) {
+    // fire-and-forget; SW cache deletion shouldn't block UI
+    window.caches.delete(name).catch(() => {})
+  }
+}
+
 export function useUpdateDeenDay() {
   const qc = useQueryClient()
   return useMutation({
@@ -64,6 +72,7 @@ export function useResetData() {
       // Every list the app renders came out of the tables that were just
       // cleared, so nothing cached survives this.
       qc.invalidateQueries()
+      clearSwCaches(['api-cache', 'document-cache'])
     },
   })
 }
@@ -74,6 +83,7 @@ export function useLogout() {
     mutationFn: () => apiPost<{ ok: boolean }>('/auth/logout', {}),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.auth.status })
+      clearSwCaches(['api-cache', 'document-cache'])
     },
   })
 }

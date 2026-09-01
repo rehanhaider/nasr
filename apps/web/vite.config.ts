@@ -42,17 +42,42 @@ export default defineConfig({
         navigateFallback: null,
         runtimeCaching: [
           {
-            urlPattern: ({ request }) => request.destination === 'script' || request.destination === 'style' || request.destination === 'document',
-            handler: 'StaleWhileRevalidate',
-            options: { cacheName: 'assets-cache', expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 } },
+            urlPattern: ({ url }) =>
+              url.pathname.startsWith('/api/v1/auth/') || url.pathname.startsWith('/api/v1/export'),
+            handler: 'NetworkOnly',
           },
           {
-            urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
+            urlPattern: ({ request, url }) =>
+              !url.pathname.startsWith('/api/') &&
+              (request.destination === 'script' ||
+                request.destination === 'style' ||
+                request.destination === 'font' ||
+                request.destination === 'image'),
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'assets-cache',
+              expiration: { maxEntries: 120, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
+          },
+          {
+            urlPattern: ({ request, url }) =>
+              request.destination === 'document' && !url.pathname.startsWith('/api/'),
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'document-cache',
+              networkTimeoutSeconds: 3,
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: ({ url, request }) =>
+              url.pathname.startsWith('/api/') && request.method === 'GET',
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
               networkTimeoutSeconds: 3,
-              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 },
+              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 },
               cacheableResponse: { statuses: [0, 200] },
             },
           },
